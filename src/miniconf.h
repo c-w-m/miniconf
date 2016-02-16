@@ -15,45 +15,46 @@ class Value {
         };
         
         // Value-based functions 
-        explicit Value(const Value& other);
-        explicit Value(Value&& other);
+        Value(const Value& other);
+        Value(Value&& other);
         Value& operator=(const Value& other);
         Value& operator=(Value&& other);
 
         // int
-        explicit Value(const int& other);
+        Value(const int& other);
         Value& operator=(const int& other);
-        explicit operator int();
-        int getInt();
+        explicit operator int() const;
+        int getInt() const;
 
         // number (floating point)
-        explicit Value(const double& other);
+        Value(const double& other);
         Value& operator=(const double& other);
-        explicit operator double();
-        double getNumber();
+        explicit operator double() const;
+        double getNumber() const;
 
         // bool
-        explicit Value(const bool& other);
+        Value(const bool& other);
         Value& operator=(const bool& other);
-        explicit operator bool();
-        bool getBoolean();
+        explicit operator bool() const;
+        bool getBoolean() const;
         
         // char array
-        explicit Value(const char* other);
+        Value(const char* other);
         Value& operator=(const char* other);
-        explicit operator char*();
-        char* getCharArray();
+        explicit operator char*() const;
+        char* getCharArray() const;
 
         // string
-        explicit Value(const std::string& other);
+        Value(const std::string& other);
         Value& operator=(const std::string& other);
-        explicit operator std::string();
-        std::string getString();
+        explicit operator std::string() const;
+        std::string getString() const;
 
         // output functions
         std::string print();
         DataType type();
         bool isEmpty();
+        static Value unknown();
 
     private:
         
@@ -66,6 +67,31 @@ class Value {
         char* _data;
 };
 
+class Config
+{
+    public:
+        class Option;
+    private:
+};
+
+class Config::Option
+{
+    public:
+        Option();
+        Config::Option& flag(const std::string& flag);
+        Config::Option& shortflag(const std::string& shortflag);
+        Config::Option& description(const std::string& description);
+        Config::Option& defaultValue(const Value& defaultValue);
+        Config::Option& required(const bool required);
+        std::string description();
+    private:
+        std::string     _flag;
+        std::string     _shortflag;
+        std::string     _description;
+        Value           _defaultValue;
+        bool            _required;
+};
+
 Value::Value(): _type(DataType::UNKNOWN), _size(0), _data(nullptr) 
 { 
 }
@@ -73,47 +99,41 @@ Value::Value(): _type(DataType::UNKNOWN), _size(0), _data(nullptr)
 Value::Value(const Value& other): Value()
 {
     copyData(other._data, other._size, other._type);
-    printf("LValue Value Constructor\n");
 }
 
 Value::Value(Value&& other): Value()
 {
     moveData(other._data, other._size, other._type);
-    printf("RValue Value Constructor\n");
 }
         
 
 Value& Value::operator=(const Value& other)
 {
-    printf("LValue Value Assignment\n");
     return copyData(other._data, other._size, other._type);
 }
 
 Value& Value::operator=(Value&& other)
 {
-    printf("RValue Value Assignment\n");
     return moveData(other._data, other._size, other._type);
 }
         
 //  int
 Value::Value(const int& other): Value()
 {   
-    printf("Int ctor\n");
     copyData(reinterpret_cast<const char*>(&other), sizeof(int), DataType::INT);
 }
 
 Value& Value::operator=(const int& other)
 {
-    printf("Int assignment\n");
     return copyData(reinterpret_cast<const char*>(&other), sizeof(int), DataType::INT);
 }
 
-Value::operator int()
+Value::operator int() const
 {
     return *reinterpret_cast<int*>(_data);
 }
 
-int Value::getInt()
+int Value::getInt() const
 {
     return *reinterpret_cast<int*>(_data);
 }
@@ -121,22 +141,20 @@ int Value::getInt()
 //  number (floating point)
 Value::Value(const double& other): Value()
 {   
-    printf("float ctor\n");
     copyData(reinterpret_cast<const char*>(&other), sizeof(double), DataType::NUMBER);
 }
 
 Value& Value::operator=(const double& other)
 {
-    printf("float assignment\n");
     return copyData(reinterpret_cast<const char*>(&other), sizeof(double), DataType::NUMBER);
 }
 
-Value::operator double()
+Value::operator double() const
 {
     return *reinterpret_cast<double*>(_data);
 }
 
-double Value::getNumber()
+double Value::getNumber() const
 {
     return *reinterpret_cast<double*>(_data);
 }
@@ -145,22 +163,20 @@ double Value::getNumber()
 //  bool
 Value::Value(const bool& other): Value()
 {   
-    printf("bool ctor\n");
     copyData(reinterpret_cast<const char*>(&other), sizeof(bool), DataType::NUMBER);
 }
 
 Value& Value::operator=(const bool& other)
 {
-    printf("bool assignment\n");
     return copyData(reinterpret_cast<const char*>(&other), sizeof(bool), DataType::NUMBER);
 }
 
-Value::operator bool()
+Value::operator bool() const
 {
     return *reinterpret_cast<bool*>(_data);
 }
 
-bool Value::getBoolean()
+bool Value::getBoolean() const
 {
     return *reinterpret_cast<bool*>(_data);
 }
@@ -168,22 +184,20 @@ bool Value::getBoolean()
 //  char array
 Value::Value(const char* other): Value()
 {   
-    printf("char* ctor\n");
     copyData(other, strlen(other) + 1, DataType::STRING);
 }
 
 Value& Value::operator=(const char* other)
 {
-    printf("char* assignment\n");
     return copyData(other, strlen(other) + 1, DataType::STRING);
 }
 
-Value::operator char*()
+Value::operator char*() const
 {
     return reinterpret_cast<char*>(_data);
 }
 
-char* Value::getCharArray()
+char* Value::getCharArray() const
 {
     return reinterpret_cast<char*>(_data);
 }
@@ -191,22 +205,20 @@ char* Value::getCharArray()
 //  std::string
 Value::Value(const std::string& other): Value()
 {   
-    printf("std::string ctor\n");
     copyData(other.c_str(), other.size() + 1, DataType::STRING);
 }
 
 Value& Value::operator=(const std::string& other)
 {
-    printf("std::string assignment\n");
     return copyData(other.c_str(), other.size() + 1, DataType::STRING);
 }
 
-Value::operator std::string()
+Value::operator std::string() const
 {
     return std::string(reinterpret_cast<char*>(_data));
 }
 
-std::string Value::getString()
+std::string Value::getString() const
 {
     return std::string(reinterpret_cast<char*>(_data));
 }
@@ -249,6 +261,11 @@ Value::DataType Value::type()
 bool Value::isEmpty()
 {
     return (_data == nullptr || _type == DataType::UNKNOWN);
+}
+
+Value Value::unknown()
+{
+    return Value();
 }
 
 // move and copy function

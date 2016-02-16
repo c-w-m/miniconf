@@ -4,7 +4,6 @@
 int main(int argc, char** argv)
 {
     int x = 11;
-    int y = 12;
     Value v1(x);
     Value v2(123.23);
     Value v4((Value)Value(v1));
