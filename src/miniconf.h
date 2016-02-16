@@ -2,6 +2,7 @@
 #include <string>
 #include <sstream>
 #include <map>
+#include <vector>
 
 class Value {
     public:
@@ -72,8 +73,11 @@ class Config
 {
     public:
         class Option;
+        Config();
+        bool parse();
     private:
         std::map<std::string, Option> _options;
+        std::vector<std::string> _log;
 };
 
 class Config::Option
