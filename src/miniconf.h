@@ -239,7 +239,7 @@ std::string Value::getString() const
 // print function
 std::string Value::print()
 {
-    int slen = 31;
+    const int slen = 31;
     char tempStr[slen + 1];
     std::string outStr;
     switch (_type)
