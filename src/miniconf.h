@@ -1,6 +1,7 @@
 #include <cstring>
 #include <string>
 #include <sstream>
+#include <map>
 
 class Value {
     public:
@@ -72,6 +73,7 @@ class Config
     public:
         class Option;
     private:
+        std::map<std::string, Option> _options;
 };
 
 class Config::Option
@@ -82,8 +84,15 @@ class Config::Option
         Config::Option& shortflag(const std::string& shortflag);
         Config::Option& description(const std::string& description);
         Config::Option& defaultValue(const Value& defaultValue);
+        Config::Option& defaultValue(const int& defaultValue);
+        Config::Option& defaultValue(const double& defaultValue);
+        Config::Option& defaultValue(const bool& defaultValue);
+        Config::Option& defaultValue(const char* defaultValue);
+        Config::Option& defaultValue(const std::string& defaultValue);
         Config::Option& required(const bool required);
         std::string description();
+        Value::DataType type();
+        bool isRequired();
     private:
         std::string     _flag;
         std::string     _shortflag;
@@ -288,3 +297,85 @@ Value& Value::copyData(const char* src, const size_t size, const DataType& type)
     memcpy(newData, src, size);
     return moveData(newData, size, type);
 }
+
+Config::Option::Option(): _flag(), _shortflag(), _description(), _defaultValue(Value::unknown()), _required(false) { }
+
+Config::Option& Config::Option::flag(const std::string& flag)
+{
+    _flag = flag;
+    return *this;
+}
+
+Config::Option& Config::Option::shortflag(const std::string& shortflag)
+{
+    _shortflag = shortflag;
+    return *this;
+}
+
+Config::Option& Config::Option::description(const std::string& description)
+{
+    _description = description;
+    return *this;
+}
+
+Config::Option& Config::Option::defaultValue(const Value& defaultValue)
+{
+    _defaultValue = defaultValue;
+    return *this;
+}
+        
+Config::Option& Config::Option::defaultValue(const int& defaultValue)
+{
+    _defaultValue = static_cast<int>(defaultValue);
+    return *this;
+}
+
+Config::Option& Config::Option::defaultValue(const double& defaultValue)
+{
+    _defaultValue = static_cast<double>(defaultValue);
+    return *this;
+}
+
+Config::Option& Config::Option::defaultValue(const bool& defaultValue)
+{
+    _defaultValue = static_cast<bool>(defaultValue);
+    return *this;
+}
+
+Config::Option& Config::Option::defaultValue(const char* defaultValue)
+{
+    _defaultValue = defaultValue;
+    return *this;
+}
+
+Config::Option& Config::Option::defaultValue(const std::string& defaultValue)
+{
+    _defaultValue = static_cast<std::string>(defaultValue);
+    return *this;
+}
+
+Config::Option& Config::Option::required(const bool required)
+{
+    _required = required;
+    return *this;
+}
+
+std::string Config::Option::description()
+{
+    return _description;
+}
+
+Value::DataType Config::Option::type()
+{
+    return _defaultValue.type();
+}
+
+bool Config::Option::isRequired()
+{
+    return _required;
+}
+
+
+
+
+
