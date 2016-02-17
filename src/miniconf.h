@@ -1,15 +1,36 @@
+/*
+ * miniconf.h
+ *
+ * A minimalist C++ configuration manager
+ *
+ * Description:
+ *    This is a simple manager to read, store and serialize application
+ *    configurations of a C++ program. The main features are:
+ *
+ *    (1) Define configuration format easily
+ *    (2) Parse configuration from command line arguments
+ *    (3) Format checking, user input validation, default values, etc.
+ *    (4) Generate help and usage message automatically
+ *    (5) (TODO) support simple JSON and CVS serialization
+ *
+ * Author: Tsz-Ho Yu (thyu413@gmail.com)
+ *
+ */
+
+/*
+ * changelog:
+ *
+ * Version 1.0
+ *     First workable version, polishing / documentation pending
+ *
+ */
+
 #include <cstring>
 #include <string>
 #include <sstream>
 #include <map>
 #include <vector>
 
-// TODO: verbose
-// TODO: Option Validation
-// TODO: Value Validation
-// TODO: program description
-// TODO: Usage
-// TODO: Help
 // TODO: --json
 // TODO: output json
 // TODO: --cvs
@@ -37,31 +58,31 @@ public:
     ~Value();
 
     // int
-    Value(const int& other);
+    explicit Value(const int& other);
     Value& operator=(const int& other);
     explicit operator int() const;
     int getInt() const;
 
     // number (floating point)
-    Value(const double& other);
+    explicit Value(const double& other);
     Value& operator=(const double& other);
     explicit operator double() const;
     double getNumber() const;
 
     // bool
-    Value(const bool& other);
+    explicit Value(const bool& other);
     Value& operator=(const bool& other);
     explicit operator bool() const;
     bool getBoolean() const;
 
     // char array
-    Value(const char* other);
+    explicit Value(const char* other);
     Value& operator=(const char* other);
     explicit operator char*() const;
     char* getCharArray() const;
 
     // string
-    Value(const std::string& other);
+    explicit Value(const std::string& other);
     Value& operator=(const std::string& other);
     explicit operator std::string() const;
     std::string getString() const;
@@ -87,15 +108,34 @@ private:
 class Config
 {
 public:
+
+    enum class LogLevel
+    {
+        INFO,
+        WARNING,
+        ERROR,
+        NONE
+    };
+
     class Option;
     Config();
+    ~Config();
     Config::Option& option(const std::string& flag);
+    bool remove(const std::string& flag);
     bool parse(int argc, char** argv);
     bool contains(const std::string& flag);
-    void printOptions(FILE* fd = stdout); // TODO: to delete, replace by usage and help
     void print(FILE* fd = stdout);
     Value& operator[](const std::string& flag);
     void log(FILE* fd = stdout);
+    void log(const LogLevel logType);
+    void verbose(bool value);
+    void usage(FILE* fd = stdout);
+    void help(FILE* fd = stdout);
+    void toggleAutoHelp(bool enabled = true);
+    void description(const std::string& desc);
+
+    LogLevel checkFormat();
+    LogLevel validate();
 
 private:
 
@@ -107,13 +147,6 @@ private:
         VALUE
     };
 
-    enum class LogType
-    {
-        INFO,
-        WARNING,
-        ERROR
-    };
-
     void setDefaultValues();
     TokenType getTokenType(const char* token);
     std::string translateShortflag(const std::string& shortflag);
@@ -121,17 +154,24 @@ private:
     Value parseValue(const char* token, Value::DataType dataType);
 
 
-    void log(LogType logType, const char* token, const char* msg);
+    void log(LogLevel logType, const std::string& token, const std::string& msg);
 
     std::map<std::string, Option> _options;
     std::map<std::string, Value> _optionValues;
     std::vector<std::string> _log;
+
+    bool _verbose;
+    LogLevel _logLevel;
+    std::string _exeName;
+    std::string _description;
+    bool _autoHelp;
 };
 
 class Config::Option
 {
 public:
     Option();
+    ~Option();
     Config::Option& flag(const std::string& flag);
     Config::Option& shortflag(const std::string& shortflag);
     Config::Option& description(const std::string& description);
@@ -235,13 +275,13 @@ double Value::getNumber() const
 //  bool
 Value::Value(const bool& other) : Value()
 {
-    copyData(reinterpret_cast<const char*>(&other), sizeof(bool), DataType::NUMBER);
+    copyData(reinterpret_cast<const char*>(&other), sizeof(bool), DataType::BOOL);
 }
 
 Value& Value::operator=(const bool& other)
 {
     clearData();
-    return copyData(reinterpret_cast<const char*>(&other), sizeof(bool), DataType::NUMBER);
+    return copyData(reinterpret_cast<const char*>(&other), sizeof(bool), DataType::BOOL);
 }
 
 Value::operator bool() const
@@ -320,7 +360,7 @@ std::string Value::print()
             outStr = std::string(tempStr);
             break;
         case DataType::STRING:
-            outStr = std::string(getCharArray());
+            outStr = "\"" + std::string(getCharArray()) + "\"";
             break;
         default: break;
     }
@@ -393,7 +433,11 @@ void Value::clearData()
     }
 }
 
-Config::Option::Option() : _flag(), _shortflag(), _description(), _defaultValue(Value::unknown()), _required(false) {}
+Config::Option::Option() : _flag(), _shortflag(), _description(), _defaultValue(Value::unknown()), _required(false)
+{}
+
+Config::Option::~Option()
+{}
 
 Config::Option& Config::Option::flag(const std::string& flag)
 {
@@ -485,9 +529,21 @@ Value::DataType Config::Option::type()
     return _defaultValue.type();
 }
 
-Config::Config()
+Config::Config() :
+    _verbose(false),
+    _logLevel(Config::LogLevel::WARNING),
+    _exeName(""),
+    _description(""),
+    _autoHelp(true)
 {
+    toggleAutoHelp(true); // set auto help to true
+}
 
+Config::~Config()
+{
+    _options.clear();
+    _optionValues.clear();
+    _log.clear();
 }
 
 Config::Option& Config::option(const std::string& flag)
@@ -503,37 +559,48 @@ void Config::setDefaultValues()
     }
 }
 
+void Config::log(const LogLevel logType)
+{
+    _logLevel = logType;
+}
 
 void Config::log(FILE* fd)
 {
-    fprintf(fd, "\n\n[[[  %s  ]]]\n\n", "PARSE LOG");
+    fprintf(fd, "\n[[[  %s  ]]]\n\n", "PARSE LOG");
     for (auto&& logline : _log) {
         fprintf(fd, "%s\n", logline.c_str());
     }
 }
 
-void Config::log(Config::LogType logType, const char* token, const char* msg)
+void Config::log(Config::LogLevel logType, const std::string& token, const std::string& msg)
 {
+    // do don't anything if log level is low
+    if (logType < _logLevel) {
+        return;
+    }
     const int tagWidth = 16;
     char tag[tagWidth + 1];
     char format[tagWidth + 1];
     std::string logString = "";
     snprintf(format, tagWidth, "<<<%%%ds>>>", tagWidth - 7);
     switch (logType) {
-        case Config::LogType::INFO:
+        case Config::LogLevel::INFO:
             snprintf(tag, tagWidth, format, "INFO");
             break;
-        case Config::LogType::WARNING:
+        case Config::LogLevel::WARNING:
             snprintf(tag, tagWidth, format, "WARNING");
             break;
-        case Config::LogType::ERROR:
+        case Config::LogLevel::ERROR:
             snprintf(tag, tagWidth, format, "ERROR");
             break;
         default:
             break;
     }
-    logString = std::string(tag) + " Input \"" + std::string(token) + "\" : " + msg;
+    logString = std::string(tag) + " Input \"" + token + "\" : " + msg;
     _log.emplace_back(logString);
+    if (_verbose) {
+        fprintf(stdout, "%s\n", logString.c_str());
+    }
 }
 
 Config::TokenType Config::getTokenType(const char* token)
@@ -619,21 +686,89 @@ Value Config::parseValue(const char* token, Value::DataType dataType)
     return Value::unknown(); // fool-proof, return an unknown
 }
 
+static Config::LogLevel worseLevel(const Config::LogLevel& a, const Config::LogLevel& b)
+{
+    return ((a) < (b)) ? (b) : (a);
+}
+
+Config::LogLevel Config::checkFormat()
+{
+    LogLevel errorLv = LogLevel::INFO;
+    for (auto&& opt : _options) {
+        Option& o = opt.second;
+        // check for error
+        if (!o.required() && o.defaultValue().isEmpty()) {
+            log(LogLevel::ERROR, o.flag(), "default value is not defined");
+            errorLv = worseLevel(errorLv, LogLevel::ERROR);
+        }
+        for (auto& opt2 : _options) {
+            Option& o2 = opt2.second;
+            if ((o.flag() != o2.flag()) && (o.shortflag() == o2.shortflag()) && !(o.shortflag().empty())) {
+                log(LogLevel::ERROR, o.flag(), "duplicate short flags (" + o2.shortflag() + ")");
+                errorLv = worseLevel(errorLv, LogLevel::ERROR);
+            }
+        }
+        // check for warnings
+        if (o.description().empty()) {
+            log(LogLevel::WARNING, o.flag(), "no description text for argument");
+            errorLv = worseLevel(errorLv, LogLevel::WARNING);
+        }
+        if (o.shortflag().empty()) {
+            log(LogLevel::WARNING, o.flag(), "no short flag is provided");
+            errorLv = worseLevel(errorLv, LogLevel::WARNING);
+        }
+    }
+    if (_description.empty()) {
+        log(LogLevel::WARNING, "", "No program description text is provided");
+        errorLv = worseLevel(errorLv, LogLevel::WARNING);
+    }
+    return errorLv;
+}
+
+// Validate User Input
+Config::LogLevel Config::validate()
+{
+    LogLevel errorLv = LogLevel::INFO;
+    for (auto&& val : _optionValues) {
+        if (val.second.isEmpty()) {
+            log(LogLevel::ERROR, val.first, "option contains invalid value");
+            errorLv = worseLevel(errorLv, LogLevel::ERROR);
+        }
+    }
+    for (auto&& opt : _options) {
+        if (_optionValues.find(opt.first) == _optionValues.end()) {
+            log(LogLevel::ERROR, opt.first, "option is undefined");
+            errorLv = worseLevel(errorLv, LogLevel::ERROR);
+        }
+    }
+    return errorLv;
+}
+
 bool Config::parse(int argc, char **argv)
 {
-    // debug
-    /*
-    for (int i = 0; i < argc; ++i) {
-        printf("ARGV[%2d] %s\n", i, argv[i]);
+    // Extract executable name
+    _exeName = std::string(argv[0]);
+    size_t lastslash = _exeName.find_last_of("\\/");
+    if (lastslash != std::string::npos) {
+        _exeName = _exeName.substr(lastslash + 1);
     }
-    */
 
-    Config::Option wildcard;
-    wildcard.defaultValue("");  // string argument by default
+    // check format of the option parser 
+    // if fatal error occurs and log level is not "NONE" (NONE = ignore errors)
+    LogLevel checkFormatResult = checkFormat();
+    if (checkFormatResult >= LogLevel::ERROR && _logLevel <= LogLevel::ERROR) {
+        log();
+        printf("\nFatal Error: Option format validation failed, abort.\n\n");
+        return false;
+    }
 
-    // validateOptions()
-
+    // set all options to default values
     setDefaultValues();
+
+    // define a wildcard option to capture "stray" option values (values without a flag)
+    // string argument by default
+    Config::Option wildcard;
+    wildcard.defaultValue("");
 
     // validateArguments()
     std::string currentFlag = "";
@@ -641,13 +776,13 @@ bool Config::parse(int argc, char **argv)
     for (int i = 1; i < argc; ++i) {
         TokenType currentTokenType = getTokenType(argv[i]);
         if (currentTokenType == TokenType::UNKNOWN) {
-            // log(log::error, argv[i], "unknown input");
+            log(LogLevel::ERROR, std::string(argv[i]), "unknown input");
         }
         else if (currentTokenType == TokenType::FLAG || currentTokenType == TokenType::SHORTFLAG) {
             currentOption = getOption(argv[i], currentTokenType);
             if (!currentOption) {
-                log(LogType::WARNING, argv[i], "unrecognized flag");
-                if (currentTokenType == TokenType::FLAG){
+                log(LogLevel::WARNING, std::string(argv[i]), "unrecognized flag");
+                if (currentTokenType == TokenType::FLAG) {
                     wildcard.flag(std::string(argv[i] + 2));
                     currentOption = &wildcard;
                 }
@@ -661,36 +796,132 @@ bool Config::parse(int argc, char **argv)
             if (currentOption) {
                 // current Option
                 Value newValue = parseValue(argv[i], currentOption->type());
-                if (newValue.isEmpty()){
-                    log(LogType::WARNING, argv[i], "unvalid value type is provided");
-                }else{
+                if (newValue.isEmpty()) {
+                    log(LogLevel::WARNING, std::string(argv[i]), "unvalid value type is provided");
+                }
+                else {
                     _optionValues[currentOption->flag()] = parseValue(argv[i], currentOption->type());
-                    log(LogType::INFO, argv[i], "value parsed successfully");
+                    log(LogLevel::INFO, std::string(argv[i]), "value parsed successfully");
                 }
                 // reset current option -> ready for a new flag
                 currentOption = nullptr;
             }
             else {
                 // stray arguments
-                log(LogType::WARNING, argv[i], "unassociated argument");
+                log(LogLevel::WARNING, std::string(argv[i]), "unassociated argument is not stored");
             }
         }
     }
+
+    // validate user inputs
+    // if fatal error occurs and log level is not "NONE" (NONE = ignore errors)
+    LogLevel validateResult = validate();
+    if (validateResult >= LogLevel::ERROR && _logLevel <= LogLevel::ERROR) {
+        log();
+        printf("\nFatal Error: Option format validation failed, abort.\n\n");
+        return false;
+    }
+
+    // if contains help and auto-help is enabled, display help message
+    if (contains("help") && _optionValues["help"].getBoolean() && _autoHelp) {
+        help();
+    }
+
     return true;
 }
 
-void Config::printOptions(FILE* fd)
+void Config::help(FILE* fd)
 {
-    for (auto&& o : _options) {
-        fprintf(fd, "[FLAG: %10s SHORT: %3s DESC: %10s Default: %10s Required: %5s Type: %8s]\n",
-                o.second.flag().c_str(),
-                o.second.shortflag().c_str(),
-                o.second.description().c_str(),
-                o.second.defaultValue().print().c_str(),
-                o.second.required() ? "true" : "false",
-                o.second.defaultValue().printType().c_str()
-                );
+    // print program description
+    if (!_description.empty()) {
+        fprintf(fd, "\n");
+        if (!_exeName.empty()) {
+            fprintf(fd, "[[[  %s  ]]]\n\n    ", _exeName.c_str());
+        }
+        fprintf(fd, "%s\n\n", _description.c_str());
     }
+
+    // print usage
+    usage();
+    // print help
+    fprintf(fd, "\n[[[  %s  ]]]\n\n", "HELP");
+    for (auto&& opt : _options) {
+        Option& o = opt.second;
+        // print short
+        fprintf(fd, "    ");
+        if (!o.shortflag().empty()) {
+            fprintf(fd, "-%s, ", o.shortflag().c_str());
+        }
+        // print long
+        fprintf(fd, "--%s ", o.flag().c_str());
+        // required
+        if (o.required()) {
+            fprintf(fd, "<REQUIRED>");
+        }
+        fprintf(fd, "\n");
+        // print description
+        fprintf(fd, "        ");
+        if (!o.description().empty()) {
+            fprintf(fd, "%s ", o.description().c_str());
+        }
+        // default value
+        if (!o.defaultValue().isEmpty()) {
+            fprintf(fd, " ( ");
+            fprintf(fd, "DEFAULT = %s", o.defaultValue().print().c_str());
+            fprintf(fd, " ) ");
+        }
+        fprintf(fd, "\n\n");
+    }
+}
+
+void Config::usage(FILE* fd)
+{
+    fprintf(fd, "\n[[[  %s  ]]]\n\n", "USAGE");
+    char exeTag[256];
+    char argLine[512];
+    snprintf(exeTag, 256 - 1, "    %s ", (_exeName.empty()) ? ("<executable>") : (_exeName.c_str()));
+    fprintf(fd, exeTag);
+    int lineWidth = 0;
+    for (auto&& opt : _options) {
+        Option& o = opt.second;
+        char argTag[512];
+        snprintf(argTag, 512 - 1, "%s%s%s <%s>%s",
+                 o.required() ? "" : "[",
+                 o.shortflag().empty() ? "--" : "-",
+                 o.shortflag().empty() ? o.flag().c_str() : o.shortflag().c_str(),
+                 o.defaultValue().printType().c_str(),
+                 o.required() ? "" : "]");
+        if (lineWidth + strlen(argTag) >= 80 - 1 - strlen(exeTag)) {
+            fprintf(fd, "\n%*s", strlen(exeTag), " ");
+            lineWidth = 0;
+        }
+        fprintf(fd, "%s ", argTag);
+        lineWidth += strlen(argTag);
+    }
+    fprintf(fd, "\n\n");
+}
+
+void Config::description(const std::string& desc)
+{
+    _description = desc;
+}
+
+void Config::toggleAutoHelp(bool enabled)
+{
+    _autoHelp = enabled;
+    if (_autoHelp && _options.find("help") == _options.end()) {
+        option("help").shortflag("h").defaultValue(false).description("Display the help message").required(false);
+    }
+    else {
+        if (_options.find("help") != _options.end()) {
+            _options.erase("help");
+        }
+    }
+}
+
+void Config::verbose(bool value)
+{
+    _verbose = value;
 }
 
 bool Config::contains(const std::string& flag)
@@ -703,18 +934,21 @@ Value& Config::operator[](const std::string& flag)
     return _optionValues[flag];
 }
 
-void Config::print(FILE* fd){
-    fprintf(fd, "\n\n[[[  %s  ]]]\n\n", "CONFIGURATION");
+void Config::print(FILE* fd)
+{
+    fprintf(fd, "\n[[[  %s  ]]]\n\n", "CONFIGURATION");
 
     printf("|------------------|------------|--------------------------------------------------|\n");
     printf("|       NAME       |    TYPE    |                     VALUE                        |\n");
     printf("|------------------|------------|--------------------------------------------------|\n");
-    for (auto&& v: _optionValues){
-        if (_options.find(v.first.c_str()) != _options.end()){
+    for (auto&& v : _optionValues) {
+        if (_options.find(v.first.c_str()) != _options.end()) {
             fprintf(fd, "| %-16s | %-10s | %-48s |\n", v.first.c_str(), v.second.printType().c_str(), v.second.print().c_str());
-        } else{
+        }
+        else {
             fprintf(fd, "| %-16s | %-10s | %-48s |\n", v.first.c_str(), (v.second.printType() + "*").c_str(), v.second.print().c_str());
         }
     }
     printf("|------------------|------------|--------------------------------------------------|\n");
+    printf("\n");
 }
