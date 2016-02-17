@@ -107,6 +107,13 @@ public:
         NONE
     };
 
+    enum class ExportFormat
+    {
+        JSON, 
+        CSV,
+        YAML
+    };
+
     class Option;
     Config();
     ~Config();
@@ -115,7 +122,6 @@ public:
     bool parse(int argc, char** argv);
     bool contains(const std::string& flag);
     void print(FILE* fd = stdout);
-    Value& operator[](const std::string& flag);
     void log(FILE* fd = stdout);
     void log(const LogLevel logType);
     void verbose(bool value);
@@ -123,9 +129,8 @@ public:
     void help(FILE* fd = stdout);
     void toggleAutoHelp(bool enabled = true);
     void description(const std::string& desc);
-
-    LogLevel checkFormat();
-    LogLevel validate();
+    std::string serialize(ExportFormat format = ExportFormat::JSON, bool pretty = true);
+    Value& operator[](const std::string& flag);
 
 private:
 
@@ -138,6 +143,8 @@ private:
     };
 
     void setDefaultValues();
+    LogLevel checkFormat();
+    LogLevel validate();
     TokenType getTokenType(const char* token);
     std::string translateShortflag(const std::string& shortflag);
     Option* getOption(const char* token, Config::TokenType tokenType);
@@ -603,7 +610,6 @@ Config::TokenType Config::getTokenType(const char* token)
     if (tlen == 0) return TokenType::UNKNOWN;
     if (token[0] == '-') {
         // check if it can be converted to a number
-        double testval;
         char* endptr = nullptr;
         std::strtod(token, &endptr);
         if (*endptr == '\0' && endptr != token) {
@@ -868,9 +874,8 @@ void Config::usage(FILE* fd)
 {
     fprintf(fd, "\n[[[  %s  ]]]\n\n", "USAGE");
     char exeTag[256];
-    char argLine[512];
     snprintf(exeTag, 256 - 1, "    %s ", (_exeName.empty()) ? ("<executable>") : (_exeName.c_str()));
-    fprintf(fd, exeTag);
+    fprintf(fd, "%s", exeTag);
     int lineWidth = 0;
     for (auto&& opt : _options) {
         Option& o = opt.second;
@@ -882,7 +887,7 @@ void Config::usage(FILE* fd)
                  o.defaultValue().printType().c_str(),
                  o.required() ? "" : "]");
         if (lineWidth + strlen(argTag) >= 80 - 1 - strlen(exeTag)) {
-            fprintf(fd, "\n%*s", strlen(exeTag), " ");
+            fprintf(fd, "\n%*s", static_cast<int>(strlen(exeTag)), " ");
             lineWidth = 0;
         }
         fprintf(fd, "%s ", argTag);
@@ -941,4 +946,29 @@ void Config::print(FILE* fd)
     }
     printf("|------------------|------------|--------------------------------------------------|\n");
     printf("\n");
+}
+
+std::string Config::serialize(ExportFormat format, bool pretty)
+{
+    std::stringstream ss; 
+    if (format == ExportFormat::JSON){
+        ss << "{";
+        ss << ( pretty ? "\n" : "");
+        for (auto opt = std::begin(_optionValues); opt != std::end(_optionValues); ++opt){
+            ss << ( pretty ? "    " : "");
+            ss << "\"" << opt->first << "\"" << (pretty ? " : " : ":") << opt->second.print();
+            ss << (opt != --std::end(_optionValues) ? "," : "");
+            ss << ( pretty ? "\n" : "");
+        }
+        ss << "}";
+    }
+    if (format == ExportFormat::CSV){
+        for (auto opt = std::begin(_optionValues); opt != std::end(_optionValues); ++opt){
+        }
+    }
+    if (format == ExportFormat::YAML){
+    
+    }
+    printf("JSON:\n%s\n", ss.str().c_str());
+    return ss.str();
 }
