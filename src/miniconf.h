@@ -12,19 +12,23 @@
  *
  * Version 1.0
  *     First workable version, polishing / documentation pending
- *
+ * Version 1.1
+ *     Basic JSON export/import
  */
 
 #include <cstring>
 #include <string>
 #include <sstream>
+#include <fstream>
 #include <map>
 #include <vector>
+#include "picojson.h"
 
-// TODO: --json
-// TODO: output json
 // TODO: --cvs
 // TODO: output cvs
+// TODO: support choice (value must be chosen form a list)
+// TODO: support array
+// TODO: nested json
 
 class Value
 {
@@ -117,20 +121,29 @@ public:
     class Option;
     Config();
     ~Config();
-    Config::Option& option(const std::string& flag);
-    bool remove(const std::string& flag);
+    
     bool parse(int argc, char** argv);
+    
+    Config::Option& option(const std::string& flag);
+    bool remove(const std::string& flag); // TODO implement it
     bool contains(const std::string& flag);
+    void description(const std::string& desc);
+    
     void print(FILE* fd = stdout);
     void log(FILE* fd = stdout);
     void log(const LogLevel logType);
     void verbose(bool value);
+    
+    Value& operator[](const std::string& flag);
+    
+    void config(const std::string& configPath);
+    std::string serialize(const std::string& outFile = "", ExportFormat format = ExportFormat::JSON, bool pretty = true);
+    
+    void enableHelp(bool enabled = true);
+    void enableConfig(bool enabled = true);
+    
     void usage(FILE* fd = stdout);
     void help(FILE* fd = stdout);
-    void toggleAutoHelp(bool enabled = true);
-    void description(const std::string& desc);
-    std::string serialize(ExportFormat format = ExportFormat::JSON, bool pretty = true);
-    Value& operator[](const std::string& flag);
 
 private:
 
@@ -148,8 +161,12 @@ private:
     TokenType getTokenType(const char* token);
     std::string translateShortflag(const std::string& shortflag);
     Option* getOption(const char* token, Config::TokenType tokenType);
+    bool findOption(const std::string& flag);
     Value parseValue(const char* token, Value::DataType dataType);
-
+    
+    void json(const std::string& JSONStr);
+    void yaml(const std::string& JSONStr);
+    void csv(const std::string& JSONStr);
 
     void log(LogLevel logType, const std::string& token, const std::string& msg);
 
@@ -162,6 +179,7 @@ private:
     std::string _exeName;
     std::string _description;
     bool _autoHelp;
+    bool _loadConfig;
 };
 
 class Config::Option
@@ -343,6 +361,7 @@ std::string Value::print()
     std::string outStr;
     switch (_type) {
         case DataType::UNKNOWN:
+            snprintf(tempStr, slen, "null");
             break;
         case DataType::INT:
             snprintf(tempStr, slen, "%d", getInt());
@@ -531,9 +550,11 @@ Config::Config() :
     _logLevel(Config::LogLevel::WARNING),
     _exeName(""),
     _description(""),
-    _autoHelp(true)
+    _autoHelp(true),
+    _loadConfig(true)
 {
-    toggleAutoHelp(true); // set auto help to true
+    enableHelp(true); // set auto help to true
+    enableConfig(true); // set auto config to true
 }
 
 Config::~Config()
@@ -635,6 +656,10 @@ std::string Config::translateShortflag(const std::string& shortflag)
     return shortflag;
 }
 
+bool Config::findOption(const std::string& flag){
+    return (_options.find(flag) != _options.end());
+}
+
 Config::Option* Config::getOption(const char* token, Config::TokenType tokenType)
 {
     std::string flag = "";
@@ -647,9 +672,8 @@ Config::Option* Config::getOption(const char* token, Config::TokenType tokenType
     if (flag.empty()) {
         return nullptr;
     }
-    auto found = _options.find(flag);
-    if (found != _options.end()) {
-        return &(found->second);
+    if (findOption(flag)) {
+        return &(_options[flag]);
     }
     return nullptr;
 }
@@ -677,7 +701,6 @@ Value Config::parseValue(const char* token, Value::DataType dataType)
     }
     if (dataType == Value::DataType::STRING) {
         return Value(token);
-
     }
     return Value::unknown(); // fool-proof, return an unknown
 }
@@ -731,8 +754,8 @@ Config::LogLevel Config::validate()
             errorLv = worseLevel(errorLv, LogLevel::ERROR);
         }
     }
-    for (auto&& opt : _options) {
-        if (_optionValues.find(opt.first) == _optionValues.end()) {
+    for (auto&& opt : _options){
+        if (!contains(opt.first)){
             log(LogLevel::ERROR, opt.first, "option is undefined");
             errorLv = worseLevel(errorLv, LogLevel::ERROR);
         }
@@ -758,16 +781,34 @@ bool Config::parse(int argc, char **argv)
         return false;
     }
 
-    // set all options to default values
-    setDefaultValues();
-
     // define a wildcard option to capture "stray" option values (values without a flag)
     // string argument by default
     Config::Option wildcard;
     wildcard.defaultValue("");
+   
+    // Value Precedence:
+    // (1) Default Value
+    // (2) Config File Settings (overwrites default values)
+    // (3) Command Line Arguments (overwrites default values and config file)
 
-    // validateArguments()
-    std::string currentFlag = "";
+    // * Set Default Values
+    setDefaultValues();
+
+    // * Load Config File
+    // case 1: only config file is defined, flag is not necessary
+    // case 2: check if config flag has been defined
+    if (_loadConfig){
+        for (int i = 1; i < argc - 1; ++i){
+            std::string flag = std::string(argv[i]);
+            std::string value = std::string(argv[i + 1]);
+            TokenType ttype = getTokenType(argv[i+1]);
+            if (( flag == "--config" || flag == "-cfg" ) && (ttype == TokenType::VALUE)){
+                config(value);
+            }
+        }
+    }
+
+    // start normal parsing 
     Option* currentOption = nullptr;
     for (int i = 1; i < argc; ++i) {
         TokenType currentTokenType = getTokenType(argv[i]);
@@ -790,25 +831,41 @@ bool Config::parse(int argc, char **argv)
         }
         else if (currentTokenType == TokenType::VALUE) {
             if (currentOption) {
-                // current Option
+                // parse the value according to default data type
                 Value newValue = parseValue(argv[i], currentOption->type());
+                // if value cannot be parsed
                 if (newValue.isEmpty()) {
                     log(LogLevel::WARNING, std::string(argv[i]), "unvalid value type is provided");
-                }
-                else {
+                } else {
+                    // assign parsed values
                     _optionValues[currentOption->flag()] = parseValue(argv[i], currentOption->type());
                     log(LogLevel::INFO, std::string(argv[i]), "value parsed successfully");
                 }
-                // reset current option -> ready for a new flag
+                // reset current option flag -> ready for a new flag
                 currentOption = nullptr;
             }
             else {
-                // stray arguments
+                // stray arguments, ignore
                 log(LogLevel::WARNING, std::string(argv[i]), "unassociated argument is not stored");
             }
         }
     }
-
+   
+    // special case - if only two argument is provided, load 2nd argument as config
+    if (argc == 2){
+        config(std::string(argv[1]));
+    }
+    
+    // if contains help and auto-help is enabled, display help message
+    if (contains("help") && _optionValues["help"].getBoolean() && _autoHelp) {
+        help();
+    }
+    
+    // remove help and config in optionValues
+    // reserved words should not be displayed as normal config values
+    if (contains("help")) _optionValues.erase("help");
+    if (contains("config")) _optionValues.erase("config");
+    
     // validate user inputs
     // if fatal error occurs and log level is not "NONE" (NONE = ignore errors)
     LogLevel validateResult = validate();
@@ -816,11 +873,6 @@ bool Config::parse(int argc, char **argv)
         log();
         printf("\nFatal Error: Option format validation failed, abort.\n\n");
         return false;
-    }
-
-    // if contains help and auto-help is enabled, display help message
-    if (contains("help") && _optionValues["help"].getBoolean() && _autoHelp) {
-        help();
     }
 
     return true;
@@ -901,14 +953,28 @@ void Config::description(const std::string& desc)
     _description = desc;
 }
 
-void Config::toggleAutoHelp(bool enabled)
+void Config::enableConfig(bool enabled)
+{
+    _loadConfig = enabled;
+    if (_autoHelp && !findOption("config")) {
+        option("config").shortflag("cfg").defaultValue("").description("Load the config file. Config format is determined by the file's extenion. If no file extension is found, default JSON loader is used").required(false);
+    }
+    else {
+        if (findOption("config")) {
+            _options.erase("config");
+        }
+    }
+
+}
+
+void Config::enableHelp(bool enabled)
 {
     _autoHelp = enabled;
-    if (_autoHelp && _options.find("help") == _options.end()) {
+    if (_autoHelp && !findOption("help")) {
         option("help").shortflag("h").defaultValue(false).description("Display the help message").required(false);
     }
     else {
-        if (_options.find("help") != _options.end()) {
+        if (findOption("help")) {
             _options.erase("help");
         }
     }
@@ -948,9 +1014,10 @@ void Config::print(FILE* fd)
     printf("\n");
 }
 
-std::string Config::serialize(ExportFormat format, bool pretty)
+std::string Config::serialize(const std::string& outFile, ExportFormat format, bool pretty)
 {
     std::stringstream ss; 
+    std::string outStr;
     if (format == ExportFormat::JSON){
         ss << "{";
         ss << ( pretty ? "\n" : "");
@@ -961,6 +1028,7 @@ std::string Config::serialize(ExportFormat format, bool pretty)
             ss << ( pretty ? "\n" : "");
         }
         ss << "}";
+        outStr = ss.str();
     }
     if (format == ExportFormat::CSV){
         for (auto opt = std::begin(_optionValues); opt != std::end(_optionValues); ++opt){
@@ -969,6 +1037,89 @@ std::string Config::serialize(ExportFormat format, bool pretty)
     if (format == ExportFormat::YAML){
     
     }
-    printf("JSON:\n%s\n", ss.str().c_str());
-    return ss.str();
+    if (!outFile.empty()){
+        std::ofstream ofd(outFile);
+        if (ofd.good()){
+            ofd << outStr;
+            ofd.close();
+        }
+    }
+    return outStr;
+}
+
+void Config::config(const std::string& configPath)
+{
+    // read content of the file
+    std::ifstream ifd(configPath, std::ios::in | std::ios::binary);
+    std::string configContent = "";
+    if (ifd){
+        configContent = std::string((std::istreambuf_iterator<char>(ifd)), std::istreambuf_iterator<char>());
+    }
+    
+    // extract extension
+    std::string extension = "";
+    size_t lastDot = configPath.find_last_of("."); 
+    if (lastDot != std::string::npos){
+        extension = configPath.substr(lastDot + 1); 
+    }
+
+    // load config according to extension
+    // default is json
+    if (extension == "json" || extension == "JSON"){
+        json(configContent); 
+        return;
+    } else if (extension == "csv" || extension == "csv"){
+        // csv(configContent) 
+        return;
+    } else if (extension == "yaml" || extension == "YAML" || extension == "yml" || extension == "YML"){
+        // yaml(configContent); 
+        return;
+    } else {
+        json(configContent);
+    }
+    return;
+}
+
+void Config::yaml(const std::string& YAMLStr){ 
+
+}
+
+void Config::csv(const std::string& CSVStr){ 
+
+}
+
+void Config::json(const std::string& JSONStr)
+{
+    picojson::value json;
+    picojson::parse(json, JSONStr);
+    picojson::object obj = json.get<picojson::object>();
+    for (auto&& o: obj){
+        std::string flag = o.first; 
+        picojson::value val = o.second;
+        if (findOption(flag)){
+            Config::Option o = _options[flag];
+            if (o.type() == Value::DataType::INT && val.is<double>()){
+                _optionValues[flag] = static_cast<int>(val.get<double>()); 
+            }
+            if (o.type() == Value::DataType::NUMBER && val.is<double>()){
+                _optionValues[flag] = val.get<double>(); 
+            }
+            if (o.type() == Value::DataType::BOOL && val.is<bool>()){
+                _optionValues[flag] = val.get<bool>(); 
+            }
+            if (o.type() == Value::DataType::STRING && val.is<std::string>()){
+                _optionValues[flag] = val.get<std::string>(); 
+            }
+        } else {
+            if (val.is<double>()){
+                _optionValues[flag] = val.get<double>(); 
+            }
+            if (val.is<bool>()){
+                _optionValues[flag] = val.get<bool>();
+            }
+            if (val.is<std::string>()){
+                _optionValues[flag] = val.get<std::string>();
+            }
+        }
+    }
 }

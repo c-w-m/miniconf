@@ -16,6 +16,5 @@ int main(int argc, char** argv)
     conf.log(Config::LogLevel::INFO);
     conf.parse(argc, argv);
     conf.print();
-    conf.serialize();
     return 0;
 }
