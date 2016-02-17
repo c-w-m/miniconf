@@ -18,9 +18,3 @@ A minimalist C++ configuration manager
 
 Tsz-Ho Yu (thyu413@gmail.com)
 
-## changelog:
-
-* Version 1.0
-    - First workable version, polishing / documentation pending
-
-

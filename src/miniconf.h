@@ -3,16 +3,6 @@
  *
  * A minimalist C++ configuration manager
  *
- * Description:
- *    This is a simple manager to read, store and serialize application
- *    configurations of a C++ program. The main features are:
- *
- *    (1) Define configuration format easily
- *    (2) Parse configuration from command line arguments
- *    (3) Format checking, user input validation, default values, etc.
- *    (4) Generate help and usage message automatically
- *    (5) (TODO) support simple JSON and CVS serialization
- *
  * Author: Tsz-Ho Yu (thyu413@gmail.com)
  *
  */
