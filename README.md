@@ -3,6 +3,7 @@
 
 A minimalist C++ configuration manager
 
+
 ## Features
 
    This is a simple manager to read, store and serialize application
@@ -12,8 +13,10 @@ A minimalist C++ configuration manager
     * Parse settings from command line arguments
     * Format checking, user input validation, default values, etc.
     * Generate help and usage message automatically
-    * (TODO) support simple JSON and CVS serialization
+    * Support simple JSON and CVS serialization
     
+------------------------------------------------------------------------
+
 ## miniconf --- A quick start
 
 #### An Example
@@ -40,6 +43,8 @@ int main(int argc, char** argv)
    return 0;
 }
 ```
+
+------------------------------------------------------------------------
 
 #### Configuring an application via command line / input file
 
@@ -72,6 +77,8 @@ The configurations in the above two examples should be the same when parsed by m
 * _boolOpt_ = true
 * _stringOpt_ = "another string"
 
+------------------------------------------------------------------------
+
 #### Reading configuration settings
 
 Configuration values can be read by specifying their type _implicitly_, if output data type can be determined, for example:
@@ -90,6 +97,8 @@ bool b = conf["boolOpt"].getBoolean();
 std::string s = conf["strOpt"].getString();
 ```
 
+------------------------------------------------------------------------
+
 #### Modifying configuration settings
 
 Configuration values can also be modified during runtime:
@@ -99,16 +108,49 @@ conf["numOpt"] = 9.42;
 conf["strOpt"] = "fourth string";
 conf["boolOpt"] = false;
 ```
+Or one can also do explicitly
 
-## More info
+```c++
+conf["numOpt"] = thyu::Value(12.56);
+```
+
+------------------------------------------------------------------------
 
 #### Generated help / usage message
+
+```
+[[[  USAGE  ]]]
+
+    example -b <BOOLEAN> [-cfg <STRING>] [-h <BOOLEAN>] [-n <NUMBER>] -s <STRING> 
+
+
+[[[  HELP  ]]]
+
+    -b, --boolOpt <REQUIRED>
+        A boolean value  ( DEFAULT = false ) 
+
+    -cfg, --config 
+        Load the config file. Config format is determined by the file's extenion. If no file extension is found, default JSON loader is used  ( DEFAULT = "" ) 
+
+    -h, --help 
+        Display the help message  ( DEFAULT = false ) 
+
+    -n, --numOpt 
+        A number value  ( DEFAULT = 3.140000 ) 
+
+    -s, --strOpt <REQUIRED>
+        A string value  ( DEFAULT = "string" ) 
+```
+
+------------------------------------------------------------------------
 
 #### Serialization / programmatic config file loading
 
 #### Print current configuration summary
 
-#### logging
+#### Extra configuration values
+
+#### validation and logging
 
 ### Author 
 

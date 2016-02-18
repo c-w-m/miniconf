@@ -31,6 +31,9 @@
 #include <vector>
 #include "picojson.h"
 
+namespace thyu
+{
+
 /*
  * A flexible container for multiple data type
  */
@@ -1011,9 +1014,11 @@ bool Config::parse(int argc, char **argv)
     }
 
     // special case - if only two argument is provided, load 2nd argument as config
+    /*
     if (argc == 2) {
         config(std::string(argv[1]));
     }
+    */
 
     // if contains help and auto-help is enabled, display help message
     if (contains("help") && _optionValues["help"].getBoolean() && _autoHelp) {
@@ -1280,4 +1285,6 @@ void Config::json(const std::string& JSONStr)
             }
         }
     }
+}
+
 }
