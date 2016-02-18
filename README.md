@@ -16,14 +16,28 @@ A minimalist C++ configuration manager
     
 ## User Manual
 
-### 
+### Setting up a configuration for an application
 
+```c++
+int main(int argc, char** argv)
+{
+   // create a Config object
    thyu::Config conf;
+   
+   // Setup config options 
    conf.option("intOpt").shortflag("i").defaultValue(3).required(false).description("An int value");
    conf.option("numOpt").shortflag("n").defaultValue(3.14).required(false).description("A number value");
    conf.option("boolOpt").shortflag("b").defaultValue(false).required(true).description("A boolean value");
    conf.option("strOpt").shortflag("s").defaultValue("string").required(true).description("A string value");
+   
+   // parse 
    conf.parse(argc, argv);
+   
+   // processing the configuration here ...
+   
+   return 0;
+}
+```
 
 ## More info
 
