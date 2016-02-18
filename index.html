@@ -1,26 +1,35 @@
-<!DOCTYPE html>
-<html lang="en-us">
+<!doctype html>
+<html>
   <head>
-    <meta charset="UTF-8">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
     <title>Miniconf by thyu</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
-    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
-    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
+    <meta name="viewport" content="width=device-width">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
   </head>
   <body>
-    <section class="page-header">
-      <h1 class="project-name">Miniconf</h1>
-      <h2 class="project-tagline">A minimalist C++ configuration manager</h2>
-      <a href="https://github.com/thyu/miniconf" class="btn">View on GitHub</a>
-      <a href="https://github.com/thyu/miniconf/zipball/master" class="btn">Download .zip</a>
-      <a href="https://github.com/thyu/miniconf/tarball/master" class="btn">Download .tar.gz</a>
-    </section>
+    <div class="wrapper">
+      <header>
+        <h1>Miniconf</h1>
+        <p>A minimalist C++ configuration manager</p>
 
-    <section class="main-content">
-      <h2>
-<a id="miniconfh" class="anchor" href="#miniconfh" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>miniconf.h</h2>
+        <p class="view"><a href="https://github.com/thyu/miniconf">View the Project on GitHub <small>thyu/miniconf</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/thyu/miniconf/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/thyu/miniconf/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/thyu/miniconf">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>
+<a id="miniconf" class="anchor" href="#miniconf" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>miniconf</h1>
 
 <p>A minimalist C++ configuration manager</p>
 
@@ -28,41 +37,163 @@
 <a id="features" class="anchor" href="#features" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Features</h2>
 
 <p>This is a simple manager to read, store and serialize application
-   configurations of a C++ program. The main features are:</p>
+   settings of a C++ program. The main features are:</p>
 
-<pre><code>* Define configuration format easily
-* Parse configuration from command line arguments
+<pre><code>* Define simple application settings easily
+* Parse settings from command line arguments
 * Format checking, user input validation, default values, etc.
 * Generate help and usage message automatically
-* (TODO) support simple JSON and CVS serialization
+* Support simple JSON and CVS serialization
 </code></pre>
 
-<h2>
-<a id="user-manual" class="anchor" href="#user-manual" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>User Manual</h2>
-
-<p>thyu::Config conf;
-   conf.option("intOpt").shortflag("i").defaultValue(3).required(false).description("An int value");
-   conf.option("numOpt").shortflag("n").defaultValue(3.14).required(false).description("A number value");
-   conf.option("boolOpt").shortflag("b").defaultValue(false).required(true).description("A boolean value");
-   conf.option("strOpt").shortflag("s").defaultValue("string").required(true).description("A string value");
-   conf.parse(argc, argv);</p>
+<hr>
 
 <h2>
-<a id="more-info" class="anchor" href="#more-info" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>More info</h2>
+<a id="miniconf-----a-quick-start" class="anchor" href="#miniconf-----a-quick-start" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>miniconf --- A quick start</h2>
+
+<h4>
+<a id="an-example" class="anchor" href="#an-example" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>An Example</h4>
+
+<p>Miniconf uses a very simple API for configuring for an application, a working example is shown below:</p>
+
+<div class="highlight highlight-source-c++"><pre><span class="pl-k">int</span> <span class="pl-en">main</span>(<span class="pl-k">int</span> argc, <span class="pl-k">char</span>** argv)
+{
+   <span class="pl-c">// create a Config object</span>
+   thyu::Config conf;
+
+   <span class="pl-c">// Setup config options </span>
+   <span class="pl-c">// Option properties, e.g. short flag</span>
+   conf.<span class="pl-c1">option</span>(<span class="pl-s"><span class="pl-pds">"</span>numOpt<span class="pl-pds">"</span></span>).<span class="pl-c1">shortflag</span>(<span class="pl-s"><span class="pl-pds">"</span>n<span class="pl-pds">"</span></span>).<span class="pl-c1">defaultValue</span>(<span class="pl-c1">3.14</span>).<span class="pl-c1">required</span>(<span class="pl-c1">false</span>).<span class="pl-c1">description</span>(<span class="pl-s"><span class="pl-pds">"</span>A number value<span class="pl-pds">"</span></span>);
+   conf.<span class="pl-c1">option</span>(<span class="pl-s"><span class="pl-pds">"</span>boolOpt<span class="pl-pds">"</span></span>).<span class="pl-c1">shortflag</span>(<span class="pl-s"><span class="pl-pds">"</span>b<span class="pl-pds">"</span></span>).<span class="pl-c1">defaultValue</span>(<span class="pl-c1">false</span>).<span class="pl-c1">required</span>(<span class="pl-c1">true</span>).<span class="pl-c1">description</span>(<span class="pl-s"><span class="pl-pds">"</span>A boolean value<span class="pl-pds">"</span></span>);
+   conf.<span class="pl-c1">option</span>(<span class="pl-s"><span class="pl-pds">"</span>strOpt<span class="pl-pds">"</span></span>).<span class="pl-c1">shortflag</span>(<span class="pl-s"><span class="pl-pds">"</span>s<span class="pl-pds">"</span></span>).<span class="pl-c1">defaultValue</span>(<span class="pl-s"><span class="pl-pds">"</span>string<span class="pl-pds">"</span></span>).<span class="pl-c1">required</span>(<span class="pl-c1">true</span>).<span class="pl-c1">description</span>(<span class="pl-s"><span class="pl-pds">"</span>A string value<span class="pl-pds">"</span></span>);
+
+   <span class="pl-c">// parse </span>
+   conf.<span class="pl-c1">parse</span>(argc, argv);
+
+   <span class="pl-c">// processing the configuration here ...</span>
+
+   <span class="pl-k">return</span> <span class="pl-c1">0</span>;
+}</pre></div>
+
+<hr>
+
+<h4>
+<a id="configuring-an-application-via-command-line--input-file" class="anchor" href="#configuring-an-application-via-command-line--input-file" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Configuring an application via command line / input file</h4>
+
+<p>User can modify the configuration settings by command line, for example:</p>
+
+<div class="highlight highlight-source-shell"><pre>$ ./program --numOpt 6.28 --boolOpt <span class="pl-c1">true</span> -s <span class="pl-s"><span class="pl-pds">"</span>another string<span class="pl-pds">"</span></span></pre></div>
+
+<p>Alternatively, a config file can also be used, for example:</p>
+
+<div class="highlight highlight-source-shell"><pre>$ ./program --config settings.json -s <span class="pl-s"><span class="pl-pds">"</span>another string<span class="pl-pds">"</span></span></pre></div>
+
+<p>Where the content of config file "settings.json" is:</p>
+
+<div class="highlight highlight-source-json"><pre>{
+   <span class="pl-s"><span class="pl-pds">"</span>numOpt<span class="pl-pds">"</span></span>: <span class="pl-c1">6.28</span>,
+   <span class="pl-s"><span class="pl-pds">"</span>boolOpt<span class="pl-pds">"</span></span>: <span class="pl-c1">true</span>, 
+   <span class="pl-s"><span class="pl-pds">"</span>stringOpt<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>this will be overwritten<span class="pl-pds">"</span></span>
+}</pre></div>
+
+<p>Note that command-line arguments has a higher priority so the attribute "stringOpt" in the json file will be overwritten by "-s/--stringOpt" in the command-line. </p>
+
+<p>The configurations in the above two examples should be the same when parsed by miniconf:</p>
+
+<ul>
+<li>
+<em>numOpt</em> = 6.28</li>
+<li>
+<em>boolOpt</em> = true</li>
+<li>
+<em>stringOpt</em> = "another string"</li>
+</ul>
+
+<hr>
+
+<h4>
+<a id="reading-configuration-settings" class="anchor" href="#reading-configuration-settings" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Reading configuration settings</h4>
+
+<p>Configuration values can be read by specifying their type <em>implicitly</em>, if output data type can be determined, for example:</p>
+
+<div class="highlight highlight-source-c++"><pre><span class="pl-k">double</span> n = conf[<span class="pl-s"><span class="pl-pds">"</span>numOpt<span class="pl-pds">"</span></span>];
+<span class="pl-k">bool</span> b = conf[<span class="pl-s"><span class="pl-pds">"</span>boolOpt<span class="pl-pds">"</span></span>];
+std::string s = conf[<span class="pl-s"><span class="pl-pds">"</span>strOpt<span class="pl-pds">"</span></span>];</pre></div>
+
+<p>or, user may also define the configuration value <em>explicitly</em>:</p>
+
+<div class="highlight highlight-source-c++"><pre><span class="pl-k">double</span> n = conf[<span class="pl-s"><span class="pl-pds">"</span>numOpt<span class="pl-pds">"</span></span>].getNumber();
+<span class="pl-k">bool</span> b = conf[<span class="pl-s"><span class="pl-pds">"</span>boolOpt<span class="pl-pds">"</span></span>].getBoolean();
+std::string s = conf[<span class="pl-s"><span class="pl-pds">"</span>strOpt<span class="pl-pds">"</span></span>].getString();</pre></div>
+
+<hr>
+
+<h4>
+<a id="modifying-configuration-settings" class="anchor" href="#modifying-configuration-settings" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Modifying configuration settings</h4>
+
+<p>Configuration values can also be modified during runtime:</p>
+
+<div class="highlight highlight-source-c++"><pre>conf[<span class="pl-s"><span class="pl-pds">"</span>numOpt<span class="pl-pds">"</span></span>] = <span class="pl-c1">9.42</span>;
+conf[<span class="pl-s"><span class="pl-pds">"</span>strOpt<span class="pl-pds">"</span></span>] = <span class="pl-s"><span class="pl-pds">"</span>fourth string<span class="pl-pds">"</span></span>;
+conf[<span class="pl-s"><span class="pl-pds">"</span>boolOpt<span class="pl-pds">"</span></span>] = <span class="pl-c1">false</span>;</pre></div>
+
+<p>Or one can also do explicitly</p>
+
+<div class="highlight highlight-source-c++"><pre>conf[<span class="pl-s"><span class="pl-pds">"</span>numOpt<span class="pl-pds">"</span></span>] = thyu::Value(<span class="pl-c1">12.56</span>);</pre></div>
+
+<hr>
+
+<h4>
+<a id="generated-help--usage-message" class="anchor" href="#generated-help--usage-message" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Generated help / usage message</h4>
+
+<pre><code>[[[  USAGE  ]]]
+
+    example -b &lt;BOOLEAN&gt; [-cfg &lt;STRING&gt;] [-h &lt;BOOLEAN&gt;] [-n &lt;NUMBER&gt;] -s &lt;STRING&gt; 
+
+
+[[[  HELP  ]]]
+
+    -b, --boolOpt &lt;REQUIRED&gt;
+        A boolean value  ( DEFAULT = false ) 
+
+    -cfg, --config 
+        Load the config file. Config format is determined by the file's extenion. If no file extension is found, default JSON loader is used  ( DEFAULT = "" ) 
+
+    -h, --help 
+        Display the help message  ( DEFAULT = false ) 
+
+    -n, --numOpt 
+        A number value  ( DEFAULT = 3.140000 ) 
+
+    -s, --strOpt &lt;REQUIRED&gt;
+        A string value  ( DEFAULT = "string" ) 
+</code></pre>
+
+<hr>
+
+<h4>
+<a id="serialization--programmatic-config-file-loading" class="anchor" href="#serialization--programmatic-config-file-loading" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Serialization / programmatic config file loading</h4>
+
+<h4>
+<a id="print-current-configuration-summary" class="anchor" href="#print-current-configuration-summary" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Print current configuration summary</h4>
+
+<h4>
+<a id="extra-configuration-values" class="anchor" href="#extra-configuration-values" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Extra configuration values</h4>
+
+<h4>
+<a id="validation-and-logging" class="anchor" href="#validation-and-logging" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>validation and logging</h4>
 
 <h3>
 <a id="author" class="anchor" href="#author" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Author</h3>
 
 <p>Tsz-Ho Yu (<a href="mailto:thyu413@gmail.com">thyu413@gmail.com</a>)</p>
-
-      <footer class="site-footer">
-        <span class="site-footer-owner"><a href="https://github.com/thyu/miniconf">Miniconf</a> is maintained by <a href="https://github.com/thyu">thyu</a>.</span>
-
-        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/thyu">thyu</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
       </footer>
-
-    </section>
-
-  
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
   </body>
 </html>
