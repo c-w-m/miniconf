@@ -14,9 +14,11 @@ A minimalist C++ configuration manager
     * Generate help and usage message automatically
     * (TODO) support simple JSON and CVS serialization
     
-## User Manual
+## miniconf --- A quick start
 
-### Setting up a configuration for an application
+### An Example
+
+Miniconf uses a very simple API for defining a configuration for an application, a working example is shown below:
 
 ```c++
 int main(int argc, char** argv)
@@ -25,7 +27,7 @@ int main(int argc, char** argv)
    thyu::Config conf;
    
    // Setup config options 
-   conf.option("intOpt").shortflag("i").defaultValue(3).required(false).description("An int value");
+   // Option properties, e.g. short flag
    conf.option("numOpt").shortflag("n").defaultValue(3.14).required(false).description("A number value");
    conf.option("boolOpt").shortflag("b").defaultValue(false).required(true).description("A boolean value");
    conf.option("strOpt").shortflag("s").defaultValue("string").required(true).description("A string value");
@@ -38,6 +40,40 @@ int main(int argc, char** argv)
    return 0;
 }
 ```
+
+#### Configuring an application via command line / input file
+
+User can modify the configuration settings by command line, for example:
+
+```bash
+$ ./program --numOpt 6.28 --boolOpt true -s "another string"
+```
+Alternatively, a config file can also be used:
+
+```bash
+$ ./program --config settings.json -s "another string"
+```
+
+Where the content of config file "settings.json" is:
+
+```json
+{
+   "numOpt": 6.28,
+   "boolOpt": true, 
+   "stringOpt": "this will be overwritten"
+}
+```
+Note that command-line arguments has a higher priority so the attribute "stringOpt" in the json file will be overwritten by "-s/--stringOpt" in the command-line. 
+
+The configurations in the above two examples should be the same when parsed by miniconf:
+ 
+* _numOpt_ = 6.28
+* _boolOpt_ = true
+* _stringOpt_ = "another string"
+
+### Accessing configuration values
+
+
 
 ## More info
 
