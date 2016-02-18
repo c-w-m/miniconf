@@ -1,24 +1,24 @@
 
-## miniconf.h
+# miniconf
 
 A minimalist C++ configuration manager
 
 ## Features
 
    This is a simple manager to read, store and serialize application
-   configurations of a C++ program. The main features are:
+   settings of a C++ program. The main features are:
 
-    * Define configuration format easily
-    * Parse configuration from command line arguments
+    * Define simple application settings easily
+    * Parse settings from command line arguments
     * Format checking, user input validation, default values, etc.
     * Generate help and usage message automatically
     * (TODO) support simple JSON and CVS serialization
     
 ## miniconf --- A quick start
 
-### An Example
+#### An Example
 
-Miniconf uses a very simple API for defining a configuration for an application, a working example is shown below:
+Miniconf uses a very simple API for configuring for an application, a working example is shown below:
 
 ```c++
 int main(int argc, char** argv)
@@ -48,7 +48,8 @@ User can modify the configuration settings by command line, for example:
 ```bash
 $ ./program --numOpt 6.28 --boolOpt true -s "another string"
 ```
-Alternatively, a config file can also be used:
+
+Alternatively, a config file can also be used, for example:
 
 ```bash
 $ ./program --config settings.json -s "another string"
@@ -71,11 +72,43 @@ The configurations in the above two examples should be the same when parsed by m
 * _boolOpt_ = true
 * _stringOpt_ = "another string"
 
-### Accessing configuration values
+#### Reading configuration settings
 
+Configuration values can be read by specifying their type _implicitly_, if output data type can be determined, for example:
 
+```c++
+double n = conf["numOpt"];
+bool b = conf["boolOpt"];
+std::string s = conf["strOpt"];
+```
+
+or, user may also define the configuration value _explicitly_:
+
+```c++
+double n = conf["numOpt"].getNumber();
+bool b = conf["boolOpt"].getBoolean();
+std::string s = conf["strOpt"].getString();
+```
+
+#### Modifying configuration settings
+
+Configuration values can also be modified during runtime:
+
+```c++
+conf["numOpt"] = 9.42;
+conf["strOpt"] = "fourth string";
+conf["boolOpt"] = false;
+```
 
 ## More info
+
+#### Generated help / usage message
+
+#### Serialization / programmatic config file loading
+
+#### Print current configuration summary
+
+#### logging
 
 ### Author 
 
