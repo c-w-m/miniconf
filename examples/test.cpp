@@ -17,6 +17,8 @@ int main(int argc, char** argv)
 
    conf.print();
 
+   conf.serialize("test.csv");
+
    // processing the configuration here ...
 
    return 0;

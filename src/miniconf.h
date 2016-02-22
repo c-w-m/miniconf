@@ -14,12 +14,11 @@
  *     First workable version, polishing / documentation pending
  * Version 1.1
  *     Basic JSON export/import
+ * Version 1.2
+ *     Basic CSV export/import
+ *
  */
 
-// TODO: --cvs
-// TODO: output cvs
-// TODO: flag not found
-// TODO: add json errors
 // TODO: nested json
 // TODO: support choice (value must be chosen form a list)
 // TODO: support array
@@ -178,8 +177,7 @@ public:
     // write one config file manually
     enum class ExportFormat {
         JSON,
-        CSV,
-        YAML
+        CSV
     };
 
     // Option member class which describe the properties of a
@@ -195,7 +193,7 @@ public:
 
     // Create a new configuration option, uniquely identified by its flag
     Config::Option& option(const std::string& flag);
-    // TODO to remove an option
+    // Remove an option
     bool remove(const std::string& flag);
     // check if the option value is defined in the current configuration
     bool contains(const std::string& flag);
@@ -220,7 +218,7 @@ public:
     void config(const std::string& configPath);
 
     // serialize the current configuration
-    std::string serialize(const std::string& outFile = "", ExportFormat format = ExportFormat::JSON, bool pretty = true);
+    std::string serialize(const std::string& serializeFilePath = "", ExportFormat format = ExportFormat::JSON, bool pretty = true);
 
     // enable automatically generated help message (--help/-h)
     void enableHelp(bool enabled = true);
@@ -273,13 +271,10 @@ private:
     Value parseValue(const char* token, Value::DataType dataType);
 
     // load json config string
-    void json(const std::string& JSONStr);
-
-    // load yaml config string
-    void yaml(const std::string& YAMLStr);
+    bool json(const std::string& JSONStr);
 
     // load csv config string
-    void csv(const std::string& CSVStr);
+    bool csv(const std::string& CSVStr);
 
     // internal function for adding log messages
     void log(LogLevel logType, const std::string& token, const std::string& msg);
@@ -1218,10 +1213,24 @@ void Config::print(FILE* fd)
     printf("\n");
 }
 
-std::string Config::serialize(const std::string& outFile, ExportFormat format, bool pretty)
+std::string Config::serialize(const std::string& serializeFilePath, ExportFormat format, bool pretty)
 {
     std::stringstream ss;
     std::string outStr;
+
+    // extract extension
+    std::string extension = "";
+    size_t lastDot = serializeFilePath.find_last_of(".");
+    if (lastDot != std::string::npos) {
+        extension = serializeFilePath.substr(lastDot + 1);
+    }
+    if (extension == "json" || extension == "JSON"){
+        format = ExportFormat::JSON; 
+    } else if (extension == "csv" || extension == "CSV"){
+        format = ExportFormat::CSV; 
+    }    
+
+    // serialize JSON
     if (format == ExportFormat::JSON) {
         ss << "{";
         ss << ( pretty ? "\n" : "");
@@ -1234,15 +1243,24 @@ std::string Config::serialize(const std::string& outFile, ExportFormat format, b
         ss << "}";
         outStr = ss.str();
     }
+
+    // serialize CSV
     if (format == ExportFormat::CSV) {
         for (auto opt = std::begin(_optionValues); opt != std::end(_optionValues); ++opt) {
+            std::string flag = opt->first;
+            std::string val = opt->second.print();
+            if (opt->second.type() == Value::DataType::STRING){
+                // remove "" from string
+                if (val.size() >= 2){ 
+                    val = val.substr(1, val.size()-2);
+                }
+            }
+            ss << flag << "," << val << std::endl; 
         }
+        outStr = ss.str();
     }
-    if (format == ExportFormat::YAML) {
-
-    }
-    if (!outFile.empty()) {
-        std::ofstream ofd(outFile);
+    if (!serializeFilePath.empty()) {
+        std::ofstream ofd(serializeFilePath);
         if (ofd.good()) {
             ofd << outStr;
             ofd.close();
@@ -1272,11 +1290,8 @@ void Config::config(const std::string& configPath)
     if (extension == "json" || extension == "JSON") {
         json(configContent);
         return;
-    } else if (extension == "csv" || extension == "csv") {
+    } else if (extension == "csv" || extension == "CSV") {
         csv(configContent);
-        return;
-    } else if (extension == "yaml" || extension == "YAML" || extension == "yml" || extension == "YML") {
-        // yaml(configContent);
         return;
     } else {
         json(configContent);
@@ -1284,14 +1299,10 @@ void Config::config(const std::string& configPath)
     return;
 }
 
-void Config::yaml(const std::string& YAMLStr)
-{
-
-}
-
-void Config::csv(const std::string& CSVStr)
+bool Config::csv(const std::string& CSVStr)
 {
     std::stringstream ss(CSVStr);
+    bool success = true;
     while (ss.good()){
         std::string templine;
         getline(ss, templine);
@@ -1306,6 +1317,7 @@ void Config::csv(const std::string& CSVStr)
             getline(lss, svalue, ',');
             if (svalue.empty()){
                 continue; 
+                success = false;
             }
             // check if options exists
             if (findOption(sflag)){
@@ -1315,19 +1327,19 @@ void Config::csv(const std::string& CSVStr)
             } else {
                 // parse string when the flag does not exist in the original configuration
                 _optionValues[sflag] = parseValue(svalue.c_str(), Value::DataType::STRING);
-                log(LogLevel::INFO, std::string(sflag), "value is loaded from config");
+                log(LogLevel::INFO, std::string(sflag), "value is not defined in config, parsed as a string value");
             }
-
         }
     }
-    return;
+    return success;
 }
 
-void Config::json(const std::string& JSONStr)
+bool Config::json(const std::string& JSONStr)
 {
     picojson::value json;
     picojson::parse(json, JSONStr);
     picojson::object obj = json.get<picojson::object>();
+    bool success = true;
     for (auto && o : obj) {
         std::string flag = o.first;
         picojson::value val = o.second;
@@ -1335,28 +1347,45 @@ void Config::json(const std::string& JSONStr)
             Config::Option o = _options[flag];
             if (o.type() == Value::DataType::INT && val.is<double>()) {
                 _optionValues[flag] = static_cast<int>(val.get<double>());
+            } else {
+                log(LogLevel::WARNING, flag, "unable to parse the option from config file");
+                success = false;
             }
             if (o.type() == Value::DataType::NUMBER && val.is<double>()) {
                 _optionValues[flag] = val.get<double>();
+            } else {
+                log(LogLevel::WARNING, flag, "unable to parse the option from config file");
+                success = false;
             }
             if (o.type() == Value::DataType::BOOL && val.is<bool>()) {
                 _optionValues[flag] = val.get<bool>();
+            } else {
+                log(LogLevel::WARNING, flag, "unable to parse the option from config file");
+                success = false;
             }
             if (o.type() == Value::DataType::STRING && val.is<std::string>()) {
                 _optionValues[flag] = val.get<std::string>();
+            } else {
+                log(LogLevel::WARNING, flag, "unable to parse the option from config file");
+                success = false;
             }
         } else {
             if (val.is<double>()) {
                 _optionValues[flag] = val.get<double>();
-            }
-            if (val.is<bool>()) {
+            } else if (val.is<bool>()) {
                 _optionValues[flag] = val.get<bool>();
-            }
-            if (val.is<std::string>()) {
+            } else if (val.is<std::string>()) {
                 _optionValues[flag] = val.get<std::string>();
+            } else {
+                log(LogLevel::WARNING, flag, "unable to parse the option from config file");
+                success = false;
             }
         }
     }
+    if (success){
+        log(LogLevel::WARNING, "", "config loaded sucessfully.");
+    }
+    return success;
 }
 
 }
