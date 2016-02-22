@@ -16,12 +16,13 @@
  *     Basic JSON export/import
  */
 
-// TODO: remove option
 // TODO: --cvs
 // TODO: output cvs
+// TODO: flag not found
+// TODO: add json errors
+// TODO: nested json
 // TODO: support choice (value must be chosen form a list)
 // TODO: support array
-// TODO: nested json
 
 #include <cstring>
 #include <string>
@@ -31,7 +32,7 @@
 #include <vector>
 #include "picojson.h"
 
-namespace thyu
+namespace miniconf
 {
 
 /*
@@ -249,6 +250,9 @@ private:
     // check config format design
     LogLevel checkFormat();
 
+    // 
+    bool checkIfReserved();
+
     // validate user input after parsing / loading config file
     LogLevel validate();
 
@@ -295,6 +299,7 @@ private:
     std::string _description; // the program's description
     bool _autoHelp; // switch for auto help mesage
     bool _loadConfig; // switch for enable loading configuration
+
 };
 
 /*
@@ -336,6 +341,9 @@ public:
 
     // decide if an option is required / optional
     Config::Option& required(const bool required);
+    
+    // Set an option to be hidden, so it will be erased after parsing
+    Config::Option& hidden(const bool hidden);
 
     // print the flag of an option
     std::string flag();
@@ -355,12 +363,17 @@ public:
     // get the data type 
     Value::DataType type();
 
+    // check if an option is hidden
+    bool hidden();
+
 private:
     std::string     _flag;          
     std::string     _shortflag;     
     std::string     _description;   
     Value           _defaultValue;
     bool            _required;
+    bool            _hidden;
+    
 };
 
 /*********************************************************************/
@@ -614,7 +627,7 @@ void Value::clearData()
 }
 
 // Option
-Config::Option::Option() : _flag(), _shortflag(), _description(), _defaultValue(Value::unknown()), _required(false)
+Config::Option::Option() : _flag(), _shortflag(), _description(), _defaultValue(Value::unknown()), _required(false), _hidden(false)
 {}
 
 Config::Option::~Option()
@@ -680,6 +693,12 @@ Config::Option& Config::Option::required(const bool required)
     return *this;
 }
 
+Config::Option& Config::Option::hidden(const bool hidden)
+{
+    _hidden = hidden;
+    return *this;
+}
+
 std::string Config::Option::flag()
 {
     return _flag;
@@ -703,6 +722,11 @@ Value Config::Option::defaultValue()
 bool Config::Option::required()
 {
     return _required;
+}
+
+bool Config::Option::hidden()
+{
+    return _hidden;
 }
 
 Value::DataType Config::Option::type()
@@ -733,6 +757,15 @@ Config::Option& Config::option(const std::string& flag)
 {
     _options.insert(std::make_pair(flag, Config::Option().flag(flag)));
     return _options[flag];
+}
+
+bool Config::remove(const std::string& flag)
+{
+    if (findOption(flag)){
+        _options.erase(flag); 
+        return true; 
+    }
+    return false; 
 }
 
 void Config::setDefaultValues()
@@ -913,14 +946,25 @@ Config::LogLevel Config::checkFormat()
 Config::LogLevel Config::validate()
 {
     LogLevel errorLv = LogLevel::INFO;
+  
+    // remove all the hidden values
+    for (auto&& opt: _options){
+        if (opt.second.hidden() && contains(opt.first)){
+            _optionValues.erase(opt.first);
+        }
+    }
+
+    // scan for all option vlaues 
     for (auto && val : _optionValues) {
         if (val.second.isEmpty()) {
             log(LogLevel::ERROR, val.first, "option contains invalid value");
             errorLv = worseLevel(errorLv, LogLevel::ERROR);
         }
     }
+
+    // scan for all remaining options are defined
     for (auto && opt : _options) {
-        if (!contains(opt.first)) {
+        if (!contains(opt.first) && !opt.second.hidden()) {
             log(LogLevel::ERROR, opt.first, "option is undefined");
             errorLv = worseLevel(errorLv, LogLevel::ERROR);
         }
@@ -959,7 +1003,7 @@ bool Config::parse(int argc, char **argv)
     // * Set Default Values
     setDefaultValues();
 
-    // * Load Config File
+    // * Load Config File before scanning for other arguments
     // case 1: only config file is defined, flag is not necessary
     // case 2: check if config flag has been defined
     if (_loadConfig) {
@@ -1013,24 +1057,15 @@ bool Config::parse(int argc, char **argv)
         }
     }
 
-    // special case - if only two argument is provided, load 2nd argument as config
-    /*
-    if (argc == 2) {
-        config(std::string(argv[1]));
-    }
-    */
-
     // if contains help and auto-help is enabled, display help message
     if (contains("help") && _optionValues["help"].getBoolean() && _autoHelp) {
         help();
     }
 
-    // remove help and config in optionValues
-    // reserved words should not be displayed as normal config values
-    if (contains("help")) _optionValues.erase("help");
-    if (contains("config")) _optionValues.erase("config");
-
     // validate user inputs
+    // remove all hidden options
+    // reserved words should not be displayed as normal config values
+    
     // if fatal error occurs and log level is not "NONE" (NONE = ignore errors)
     LogLevel validateResult = validate();
     if (validateResult >= LogLevel::ERROR && _logLevel <= LogLevel::ERROR) {
@@ -1038,7 +1073,7 @@ bool Config::parse(int argc, char **argv)
         printf("\nFatal Error: Option format validation failed, abort.\n\n");
         return false;
     }
-
+    
     return true;
 }
 
@@ -1077,7 +1112,7 @@ void Config::help(FILE* fd)
             fprintf(fd, "%s ", o.description().c_str());
         }
         // default value
-        if (!o.defaultValue().isEmpty()) {
+        if (!o.defaultValue().isEmpty() && !o.hidden()) {
             fprintf(fd, " ( ");
             fprintf(fd, "DEFAULT = %s", o.defaultValue().print().c_str());
             fprintf(fd, " ) ");
@@ -1121,7 +1156,11 @@ void Config::enableConfig(bool enabled)
 {
     _loadConfig = enabled;
     if (_autoHelp && !findOption("config")) {
-        option("config").shortflag("cfg").defaultValue("").description("Load the config file. Config format is determined by the file's extenion. If no file extension is found, default JSON loader is used").required(false);
+        option("config").
+            shortflag("cfg").
+            defaultValue("").
+            description("Input configuration file (JSON/CSV)").
+            required(false).hidden(true);
     } else {
         if (findOption("config")) {
             _options.erase("config");
@@ -1134,7 +1173,11 @@ void Config::enableHelp(bool enabled)
 {
     _autoHelp = enabled;
     if (_autoHelp && !findOption("help")) {
-        option("help").shortflag("h").defaultValue(false).description("Display the help message").required(false);
+        option("help").
+            shortflag("h").
+            defaultValue(false).
+            description("Display the help message").
+            required(false).hidden(true);
     } else {
         if (findOption("help")) {
             _options.erase("help");
@@ -1230,7 +1273,7 @@ void Config::config(const std::string& configPath)
         json(configContent);
         return;
     } else if (extension == "csv" || extension == "csv") {
-        // csv(configContent)
+        csv(configContent);
         return;
     } else if (extension == "yaml" || extension == "YAML" || extension == "yml" || extension == "YML") {
         // yaml(configContent);
@@ -1248,7 +1291,36 @@ void Config::yaml(const std::string& YAMLStr)
 
 void Config::csv(const std::string& CSVStr)
 {
+    std::stringstream ss(CSVStr);
+    while (ss.good()){
+        std::string templine;
+        getline(ss, templine);
+        std::stringstream lss(templine);
+        if (templine.empty()){
+            continue; 
+        }
+        while (lss.good()){
+            std::string sflag;
+            std::string svalue;
+            getline(lss, sflag, ',');
+            getline(lss, svalue, ',');
+            if (svalue.empty()){
+                continue; 
+            }
+            // check if options exists
+            if (findOption(sflag)){
+                // parse the default data type
+                _optionValues[sflag] = parseValue(svalue.c_str(), _options[sflag].type()); 
+                log(LogLevel::INFO, std::string(sflag), "value is loaded from config");
+            } else {
+                // parse string when the flag does not exist in the original configuration
+                _optionValues[sflag] = parseValue(svalue.c_str(), Value::DataType::STRING);
+                log(LogLevel::INFO, std::string(sflag), "value is loaded from config");
+            }
 
+        }
+    }
+    return;
 }
 
 void Config::json(const std::string& JSONStr)

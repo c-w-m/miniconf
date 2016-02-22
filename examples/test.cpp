@@ -4,7 +4,7 @@
 int main(int argc, char** argv)
 {
    // create a Config object
-   thyu::Config conf;
+   miniconf::Config conf;
 
    // Setup config options 
    // Option properties, e.g. short flag
@@ -14,6 +14,8 @@ int main(int argc, char** argv)
 
    // parse 
    conf.parse(argc, argv);
+
+   conf.print();
 
    // processing the configuration here ...
 
