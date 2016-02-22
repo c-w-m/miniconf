@@ -1232,6 +1232,13 @@ std::string Config::serialize(const std::string& serializeFilePath, ExportFormat
 
     // serialize JSON
     if (format == ExportFormat::JSON) {
+        /* 
+        picojson::value outObj;
+        for (auto v: _optionValues){
+            if (outObj.contains(v->first)){
+            }
+        }
+        */
         ss << "{";
         ss << ( pretty ? "\n" : "");
         for (auto opt = std::begin(_optionValues); opt != std::end(_optionValues); ++opt) {
