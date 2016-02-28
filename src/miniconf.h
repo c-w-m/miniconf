@@ -21,9 +21,11 @@
  *
  */
 
-// TODO: nested json
-// TODO: support choice (value must be chosen form a list)
-// TODO: support array
+// TODO: Nested json
+// TODO: Stray arguments
+// TODO: Support choice (value must be chosen form a list)
+// TODO: Beautiful print instead of printf()
+// TODO: Support array
 
 #include <cstring>
 #include <string>
@@ -249,7 +251,7 @@ namespace miniconf
              * @return True when parsing is successful, False when parsing error(s) occur
              */
             bool parse(int argc, char** argv);
-
+            
             // Creates a new configuration option, which is uniquely identified by its flag
             Config::Option& option(const std::string& flag);
 
@@ -273,17 +275,46 @@ namespace miniconf
 
             // display the log message
             void verbose(bool value);
+            
+            /*Checks config format design and reports errors if necessary
+             *
+             * This function will validate the configuration format set by the user agsinst
+             * invalid settings (e.g. optional arguments without a default value). This will
+             * be called during the parse() process.
+             *  
+             * @return The most severe level of issue detected by the process
+             */
+            LogLevel checkFormat();
+
+            /* Validates user input after parsing / loading config file
+             * 
+             * This validates the configuration after user input, e.g. all option values are 
+             * defined and not of the UNKNOWN type. This will be called automatically 
+             * after the option values have been parsed in the parse() function. 
+             *
+             * @return The most severe level of issue detected by the process
+             */
+            LogLevel validate();
 
             /* Accesses the configuration value
              *
-             * If the configuration value does not exist, an empty Value object is returned
+             * If the configuration value does not exist, an empty Value object is returned. 
              */
             Value& operator[](const std::string& flag);
 
-            // Load the configuration settings via a config file
+            /* Load the configuration settings via a config file
+             * 
+             * This function loads a config file, if the config file has been specified in 
+             * command line arguments, this will be called automatically in "parse()" function.
+             *
+             * @configPath the input configuration file path
+             */
             void config(const std::string& configPath);
 
-            // Serializes the current configuration
+            /* Serializes the current configuration
+             *
+             * Currently JSON and CSV are supported.
+             */
             std::string serialize(const std::string& serializeFilePath = "", ExportFormat format = ExportFormat::JSON, bool pretty = true);
 
             // Enables automatically generated help message (--help/-h)
@@ -295,12 +326,18 @@ namespace miniconf
             // Prints usage of this program's configuration options
             void usage(FILE* fd = stdout);
 
-            // Prints help message 
+            // Prints a automatically generated help message 
             void help(FILE* fd = stdout);
 
         private:
 
-            // type of current argument token
+            /* Types of command line arguments
+             *
+             * "UNKNOWN" indicates a parsing error
+             * A "FLAG" is command line flag which starts with "--"
+             * A "SHORTFLAG" is shortened flag which starts with "-"
+             * "VALUE" represent an argument value to be parsed
+             */
             enum class TokenType {
                 UNKNOWN,    // parsing error
                 FLAG,       // a long flag, e.g. "--setting"
@@ -308,17 +345,8 @@ namespace miniconf
                 VALUE       // value, e.g. 123, "hello", true
             };
 
-            // set default values to configuration according to design
+            // Sets default values to option values, used in parse() for initialization
             void setDefaultValues();
-
-            // check config format design
-            LogLevel checkFormat();
-
-            // 
-            bool checkIfReserved();
-
-            // validate user input after parsing / loading config file
-            LogLevel validate();
 
             // get current token type
             TokenType getTokenType(const char* token);
@@ -354,12 +382,23 @@ namespace miniconf
             // this is a stack of log messages
             std::vector<std::string> _log;
 
-            bool _verbose;  // switch for verbose
-            LogLevel _logLevel; // log level setting
-            std::string _exeName; // program name stripped from command line
-            std::string _description; // the program's description
-            bool _autoHelp; // switch for auto help mesage
-            bool _loadConfig; // switch for enable loading configuration
+            // switch for verbose
+            bool _verbose;  
+            
+            // log level setting
+            LogLevel _logLevel; 
+            
+            // program name stripped from command line
+            std::string _exeName; 
+            
+            // the program's description
+            std::string _description; 
+            
+            // switch for auto help mesage
+            bool _autoHelp; 
+            
+            // switch for enable loading configuration
+            bool _loadConfig; 
 
     };
 
@@ -377,68 +416,98 @@ namespace miniconf
     {
         public:
 
-            // default constructor
-            // should not be used by user
+            /* Default constructor that creates a empty option
+             *
+             * Use should use Config::option(flag) to create an new option
+             */
             Option();
 
+            // Default destructor
             ~Option();
 
-            // set the flag of an option
+            // Sets the flag of an option
             Config::Option& flag(const std::string& flag);
 
-            // set the short flag of an option
+            // Sets the short flag of an option
             Config::Option& shortflag(const std::string& shortflag);
 
-            // set the description of an option
+            // Sets the description of an option
             Config::Option& description(const std::string& description);
 
-            // set the default values of an option
+            // Sets the default value of an option from a Value object
             Config::Option& defaultValue(const Value& defaultValue);
+
+            // Sets the default value of an option from an integer
             Config::Option& defaultValue(const int& defaultValue);
+            
+            // Sets the default value of an option from a floating point
             Config::Option& defaultValue(const double& defaultValue);
+            
+            // Sets the default value of an option from a boolean
             Config::Option& defaultValue(const bool& defaultValue);
+            
+            // Sets the default value of an option from a char array
             Config::Option& defaultValue(const char* defaultValue);
+            
+            // Sets the default value of an option from a string
             Config::Option& defaultValue(const std::string& defaultValue);
 
-            // decide if an option is required / optional
+            // Makes an option to be required or optional
             Config::Option& required(const bool required);
 
-            // Set an option to be hidden, so it will be erased after parsing
+            /* Sets an option to be hidden, so it will be erased after parsing
+             *
+             * This will be used for the default "help" and "config" options. 
+             */
             Config::Option& hidden(const bool hidden);
 
-            // print the flag of an option
+            // Prints the flag of an option as a string
             std::string flag();
 
-            // print the shortflag of an option
+            // Prints the shortflag of an option as a string
             std::string shortflag();
 
-            // print the description of an option
+            // Prints the description of an option
             std::string description();
 
-            // print the default value of an option
+            // Returns the default value of an option
             Value defaultValue();
 
-            // determined if the option is required
+            // Checks if the option is required or optional
             bool required();
 
-            // get the data type 
+            // Gets the data type 
             Value::DataType type();
 
-            // check if an option is hidden
+            // Checks if an option is hidden
             bool hidden();
 
         private:
+
+            // Flag of the option
             std::string     _flag;          
+            
+            // Shortened flag of the option
             std::string     _shortflag;     
+            
+            // Description of the option
             std::string     _description;   
+            
+            // Default value of the option
             Value           _defaultValue;
+            
+            // Option is required to be specified
             bool            _required;
+            
+            // Option is hidden
             bool            _hidden;
 
     };
 
     /*********************************************************************/
+    /*********************************************************************/
     /*********************** IMPLEMENTATION BELOW ************************/
+    /*********************************************************************/
     /*********************************************************************/
 
     // Value
@@ -1298,17 +1367,53 @@ namespace miniconf
 
         // serialize JSON
         if (format == ExportFormat::JSON) {
-            picojson::value outObj;
+            picojson::value outObj = picojson::value(picojson::object());
             for (auto v: _optionValues){
                 std::vector<std::string> flagTokens;
                 std::stringstream ss(v.first);
+                // tokenize
                 while (ss.good()){
                     std::string tempToken;
-                    std::getline(ss, tempToken, ',');
+                    std::getline(ss, tempToken, '.');
+                    flagTokens.emplace_back(tempToken);
                 }
-                for (auto&& xx: flagTokens){
-                    printf("tokens: %s\n", xx.c_str()); 
+                if (flagTokens.size() > 1){
+                    picojson::value* thisObj = &outObj;
+                    for (int i = 0; i < flagTokens.size(); ++i){
+                        if (i != flagTokens.size() - 1){
+                            if (thisObj->get<picojson::object>().find(flagTokens[i]) == thisObj->get<picojson::object>().end()){
+                                thisObj->get<picojson::object>()[flagTokens[i]] = picojson::value(picojson::object());
+                            }
+                            thisObj = &(thisObj->get<picojson::object>()[flagTokens[i]]);
+                        } else {
+                            if (v.second.type() == Value::DataType::INT){
+                                thisObj->get<picojson::object>()[flagTokens[i]] = picojson::value(static_cast<double>(v.second.getInt()));
+                            } else if (v.second.type() == Value::DataType::NUMBER){
+                                thisObj->get<picojson::object>()[flagTokens[i]] = picojson::value(v.second.getNumber());
+                            } else if (v.second.type() == Value::DataType::BOOL){
+                                thisObj->get<picojson::object>()[flagTokens[i]] = picojson::value(v.second.getBoolean());
+                            } else if (v.second.type() == Value::DataType::STRING){
+                                thisObj->get<picojson::object>()[flagTokens[i]] = picojson::value(v.second.getString());
+                            } 
+                        
+                        }
+                    }
+                }else{
+                    if (outObj.get<picojson::object>().find(flagTokens[0]) == outObj.get<picojson::object>().end()){
+                        if (v.second.type() == Value::DataType::INT){
+                            outObj.get<picojson::object>()[flagTokens[0]] = picojson::value(static_cast<double>(v.second.getInt()));
+                        } else if (v.second.type() == Value::DataType::NUMBER){
+                            outObj.get<picojson::object>()[flagTokens[0]] = picojson::value(v.second.getNumber());
+                        } else if (v.second.type() == Value::DataType::BOOL){
+                            outObj.get<picojson::object>()[flagTokens[0]] = picojson::value(v.second.getBoolean());
+                        }  else if (v.second.type() == Value::DataType::STRING){
+                            outObj.get<picojson::object>()[flagTokens[0]] = picojson::value(v.second.getString());
+                        } 
+                    }
                 }
+                outObj.get<picojson::object>()["asbfsdf"] = picojson::value(333.3);
+                printf("Serialize: %s\n", outObj.serialize(true).c_str());
+
             }
             /*
                ss << "{";
