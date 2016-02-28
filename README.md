@@ -11,9 +11,9 @@ A minimalist C++ configuration manager
 
     * Define simple application settings easily
     * Parse settings from command line arguments
+    * Support JSON and CVS serialization
     * Format checking, user input validation, default values, etc.
     * Generate help and usage message automatically
-    * Support simple JSON and CVS serialization
     
 ------------------------------------------------------------------------
 
@@ -21,13 +21,13 @@ A minimalist C++ configuration manager
 
 #### An Example
 
-Miniconf uses a very simple API for configuring for an application, a working example is shown below:
+miniconf uses a very simple API for configuring for an application, a working example is shown below:
 
 ```c++
 int main(int argc, char** argv)
 {
    // create a Config object
-   thyu::Config conf;
+   miniconf::Config conf;
    
    // Setup config options 
    // Option properties, e.g. short flag
@@ -57,7 +57,7 @@ $ ./program --numOpt 6.28 --boolOpt true -s "another string"
 Alternatively, a config file can also be used, for example:
 
 ```bash
-$ ./program --config settings.json -s "another string"
+$ ./program --config settings.json -s "overwritten"
 ```
 
 Where the content of config file "settings.json" is:
@@ -75,9 +75,47 @@ The configurations in the above two examples should be the same when parsed by m
  
 * _numOpt_ = 6.28
 * _boolOpt_ = true
-* _stringOpt_ = "another string"
+* _stringOpt_ = "overwritten"
 
 ------------------------------------------------------------------------
+
+#### Nested configuration
+
+Nested configuration is support in miniconf with JSON, for example:
+
+```c++
+   // Setup config options 
+   // Option properties, e.g. short flag
+   conf.option("a.b.c").shortflag("c").defaultValue("c_val").required(false).description("A nested value");
+   conf.option("a.b.d").shortflag("d").defaultValue("d_val").required(false).description("A nested value");
+   conf.option("a.e").shortflag("e").defaultValue("e_val").required(false).description("A nested value");
+```
+
+With the command line arguments which overrides the original default values:
+
+```bash
+./program --a.b.c overwritten_c_val
+```
+
+the parsed configuration is:
+
+* _a.b.c_ = "overwritten_c_val"
+* _a.b.d_ = "d"
+* _a.e_ = "e"
+
+and the exported JSON file it will become:
+
+```json
+{
+    "a": {
+        "b" : {
+            "c" : "overwritten_c_val",
+            "d" : "d" 
+        },
+        "e" : "e"
+    }
+}
+```
 
 #### Reading configuration settings
 
@@ -111,7 +149,7 @@ conf["boolOpt"] = false;
 Or one can also do explicitly
 
 ```c++
-conf["numOpt"] = thyu::Value(12.56);
+conf["numOpt"] = mimiconf::Value(12.56);
 ```
 
 ------------------------------------------------------------------------

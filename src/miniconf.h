@@ -18,10 +18,14 @@
  *     Basic CSV export/import
  * Version 1.3 
  *     Code clean up
+ * Version 1.4
+ *     Support nested JSON
  *
  */
 
+// TODO: Switch to JSON backend?
 // TODO: Nested json
+// TODO: Error checking for nested json
 // TODO: Stray arguments
 // TODO: Support choice (value must be chosen form a list)
 // TODO: Beautiful print instead of printf()
@@ -365,10 +369,16 @@ namespace miniconf
             Value parseValue(const char* token, Value::DataType dataType);
 
             // load json config string
-            bool json(const std::string& JSONStr);
+            bool loadJSON(const std::string& JSONStr);
+
+            // parse a json value
+            bool parseJSON(const picojson::value *v, const std::string& flag); 
+
+            // load a value from json
+            bool getJSONValue(const picojson::value *v, const std::string& flag); 
 
             // load csv config string
-            bool csv(const std::string& CSVStr);
+            bool loadCSV(const std::string& CSVStr);
 
             // internal function for adding log messages
             void log(LogLevel logType, const std::string& token, const std::string& msg);
@@ -1334,17 +1344,17 @@ namespace miniconf
     {
         fprintf(fd, "\n[[[  %s  ]]]\n\n", "CONFIGURATION");
 
-        printf("|------------------|------------|--------------------------------------------------|\n");
-        printf("|       NAME       |    TYPE    |                     VALUE                        |\n");
-        printf("|------------------|------------|--------------------------------------------------|\n");
+        printf("|-------------------------|------------|--------------------------------------------------|\n");
+        printf("|           NAME          |    TYPE    |                     VALUE                        |\n");
+        printf("|-------------------------|------------|--------------------------------------------------|\n");
         for (auto && v : _optionValues) {
             if (_options.find(v.first.c_str()) != _options.end()) {
-                fprintf(fd, "| %-16s | %-10s | %-48s |\n", v.first.c_str(), v.second.printType().c_str(), v.second.print().c_str());
+                fprintf(fd, "| %-23s | %-10s | %-48s |\n", v.first.c_str(), v.second.printType().c_str(), v.second.print().c_str());
             } else {
-                fprintf(fd, "| %-16s | %-10s | %-48s |\n", v.first.c_str(), (v.second.printType() + "*").c_str(), v.second.print().c_str());
+                fprintf(fd, "| %-23s | %-10s | %-48s |\n", v.first.c_str(), (v.second.printType() + "*").c_str(), v.second.print().c_str());
             }
         }
-        printf("|------------------|------------|--------------------------------------------------|\n");
+        printf("|-------------------------|------------|--------------------------------------------------|\n");
         printf("\n");
     }
 
@@ -1377,9 +1387,10 @@ namespace miniconf
                     std::getline(ss, tempToken, '.');
                     flagTokens.emplace_back(tempToken);
                 }
+                // parse
                 if (flagTokens.size() > 1){
                     picojson::value* thisObj = &outObj;
-                    for (int i = 0; i < flagTokens.size(); ++i){
+                    for (size_t i = 0; i < flagTokens.size(); ++i){
                         if (i != flagTokens.size() - 1){
                             if (thisObj->get<picojson::object>().find(flagTokens[i]) == thisObj->get<picojson::object>().end()){
                                 thisObj->get<picojson::object>()[flagTokens[i]] = picojson::value(picojson::object());
@@ -1411,22 +1422,8 @@ namespace miniconf
                         } 
                     }
                 }
-                outObj.get<picojson::object>()["asbfsdf"] = picojson::value(333.3);
-                printf("Serialize: %s\n", outObj.serialize(true).c_str());
-
             }
-            /*
-               ss << "{";
-               ss << ( pretty ? "\n" : "");
-               for (auto opt = std::begin(_optionValues); opt != std::end(_optionValues); ++opt) {
-               ss << ( pretty ? "    " : "");
-               ss << "\"" << opt->first << "\"" << (pretty ? " : " : ":") << opt->second.print();
-               ss << (opt != --std::end(_optionValues) ? "," : "");
-               ss << ( pretty ? "\n" : "");
-               }
-               ss << "}";
-               */
-            outStr = ss.str();
+            outStr = outObj.serialize(true);
         }
 
         // serialize CSV
@@ -1473,18 +1470,18 @@ namespace miniconf
         // load config according to extension
         // default is json
         if (extension == "json" || extension == "JSON") {
-            json(configContent);
+            loadJSON(configContent);
             return;
         } else if (extension == "csv" || extension == "CSV") {
-            csv(configContent);
+            loadCSV(configContent);
             return;
         } else {
-            json(configContent);
+            loadJSON(configContent);
         }
         return;
     }
 
-    bool Config::csv(const std::string& CSVStr)
+    bool Config::loadCSV(const std::string& CSVStr)
     {
         std::stringstream ss(CSVStr);
         bool success = true;
@@ -1518,59 +1515,67 @@ namespace miniconf
         }
         return success;
     }
+ 
+    bool Config::getJSONValue(const picojson::value *v, const std::string& flag){
+        bool success = true;
+        if (findOption(flag)){
+            Config::Option opt = _options[flag];
+            if (opt.type() == Value::DataType::INT && v->is<double>()){
+                _optionValues[flag] = static_cast<int>(v->get<double>());
+            } else if (opt.type() == Value::DataType::NUMBER && v->is<double>()) {
+                _optionValues[flag] = v->get<double>();
+            } else if (opt.type() == Value::DataType::BOOL && v->is<bool>()) {
+                _optionValues[flag] = v->get<bool>();
+            } else if (opt.type() == Value::DataType::STRING && v->is<std::string>()) {
+                _optionValues[flag] = v->get<std::string>();
+            } else {
+                log(LogLevel::WARNING, flag, "Unable to parse the option from config file, flag = " + flag);
+                success = false;
+            }
+        }
+        // stray options
+        else 
+        {
+            if (v->is<double>()){
+                _optionValues[flag] = v->get<double>();
+            } 
+            else if (v->is<bool>()) {
+                _optionValues[flag] = v->get<bool>();
+            } else if (v->is<std::string>()) {
+                _optionValues[flag] = v->get<std::string>();
+            } else {
+                log(LogLevel::WARNING, flag, "Unable to parse the option from config file.");
+                success = false;
+            }
+        }
+        return success;
+    }
 
-    bool Config::json(const std::string& JSONStr)
+    bool Config::parseJSON(const picojson::value *v, const std::string& flag){
+        if (v->is<double>() || v->is<bool>() || v->is<std::string>()){
+            return getJSONValue(v, flag);
+        } else if (v->is<picojson::object>()){
+            bool success = true;
+            for (auto objItem: v->get<picojson::object>()){
+                success = success && parseJSON(&(objItem.second), flag + (flag.empty() ? "" : ".") + objItem.first);
+            }
+            return success;
+        } else if (v->is<picojson::array>()){
+            for (auto arrayItem : v->get<picojson::array>()){
+                // print array, not supported yet
+            }
+        } else {
+            log(LogLevel::WARNING, flag, "Unable to parse JSON, abort, flag = " + flag);
+            return false;
+        }
+        return false;
+    }
+
+    bool Config::loadJSON(const std::string& JSONStr)
     {
         picojson::value json;
         picojson::parse(json, JSONStr);
-        picojson::object obj = json.get<picojson::object>();
-        bool success = true;
-        for (auto && o : obj) {
-            std::string flag = o.first;
-            picojson::value val = o.second;
-            if (findOption(flag)) {
-                Config::Option o = _options[flag];
-                if (o.type() == Value::DataType::INT && val.is<double>()) {
-                    _optionValues[flag] = static_cast<int>(val.get<double>());
-                } else {
-                    log(LogLevel::WARNING, flag, "unable to parse the option from config file");
-                    success = false;
-                }
-                if (o.type() == Value::DataType::NUMBER && val.is<double>()) {
-                    _optionValues[flag] = val.get<double>();
-                } else {
-                    log(LogLevel::WARNING, flag, "unable to parse the option from config file");
-                    success = false;
-                }
-                if (o.type() == Value::DataType::BOOL && val.is<bool>()) {
-                    _optionValues[flag] = val.get<bool>();
-                } else {
-                    log(LogLevel::WARNING, flag, "unable to parse the option from config file");
-                    success = false;
-                }
-                if (o.type() == Value::DataType::STRING && val.is<std::string>()) {
-                    _optionValues[flag] = val.get<std::string>();
-                } else {
-                    log(LogLevel::WARNING, flag, "unable to parse the option from config file");
-                    success = false;
-                }
-            } else {
-                if (val.is<double>()) {
-                    _optionValues[flag] = val.get<double>();
-                } else if (val.is<bool>()) {
-                    _optionValues[flag] = val.get<bool>();
-                } else if (val.is<std::string>()) {
-                    _optionValues[flag] = val.get<std::string>();
-                } else {
-                    log(LogLevel::WARNING, flag, "unable to parse the option from config file");
-                    success = false;
-                }
-            }
-        }
-        if (success){
-            log(LogLevel::WARNING, "", "config loaded sucessfully.");
-        }
-        return success;
+        return parseJSON(&json, "");
     }
 
 }
