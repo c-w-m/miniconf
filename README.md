@@ -1,11 +1,10 @@
 # miniconf
 
-miniconf is a minimalist C++ configuration manager
+miniconf is a minimalist C++ configuration manager.
 
-This is a simple manager to read, store and serialize application
-settings of a C++ program. It is not meant to be fast, but it is 
-designed to make C++ programs simpler and more flexible for 
-prototyping, research, and development in general.
+miniconf only contains one C++ header file. It reads, stores and serializes application settings of a C++ program. 
+
+It is not meant to be fast, but it is designed to make C++ programs simpler and more flexible for prototyping, research, and development in general.
 
 Its main features are:
 
