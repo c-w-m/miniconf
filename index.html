@@ -31,48 +31,51 @@
         <h1>
 <a id="miniconf" class="anchor" href="#miniconf" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>miniconf</h1>
 
-<p>A minimalist C++ configuration manager</p>
+<p>miniconf is a minimalist C++ configuration manager.</p>
+
+<p>miniconf only contains one C++ header file. It reads, stores and serializes application settings of a C++ program. </p>
+
+<p>It is not meant to be fast, but it is designed to make C++ programs simpler and more flexible for prototyping, research, and development in general.</p>
+
+<h4>
+<a id="main-features" class="anchor" href="#main-features" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>main features</h4>
+
+<ul>
+<li>It is a smart argument parser: format checking, input validation, default values, etc.</li>
+<li>It is a configuration file reader (supports JSON and CSV)</li>
+<li>It serializes settings (in JSON or CSV)</li>
+<li>It generates help and usage message automatically</li>
+</ul>
 
 <h2>
-<a id="features" class="anchor" href="#features" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Features</h2>
-
-<p>This is a simple manager to read, store and serialize application
-   settings of a C++ program. The main features are:</p>
-
-<pre><code>* Define simple application settings easily
-* Parse settings from command line arguments
-* Format checking, user input validation, default values, etc.
-* Generate help and usage message automatically
-* Support simple JSON and CVS serialization
-</code></pre>
-
-<hr>
-
-<h2>
-<a id="miniconf-----a-quick-start" class="anchor" href="#miniconf-----a-quick-start" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>miniconf --- A quick start</h2>
+<a id="one-minute-quick-start" class="anchor" href="#one-minute-quick-start" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>One Minute Quick Start</h2>
 
 <h4>
 <a id="an-example" class="anchor" href="#an-example" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>An Example</h4>
 
-<p>Miniconf uses a very simple API for configuring for an application, a working example is shown below:</p>
+<p>miniconf uses a very simple API for configuring for an application, a working example is shown below:</p>
 
 <div class="highlight highlight-source-c++"><pre><span class="pl-k">int</span> <span class="pl-en">main</span>(<span class="pl-k">int</span> argc, <span class="pl-k">char</span>** argv)
 {
-   <span class="pl-c">// create a Config object</span>
-   thyu::Config conf;
+    <span class="pl-c">/* create a Config object */</span>
+    miniconf::Config conf;
 
-   <span class="pl-c">// Setup config options </span>
-   <span class="pl-c">// Option properties, e.g. short flag</span>
-   conf.<span class="pl-c1">option</span>(<span class="pl-s"><span class="pl-pds">"</span>numOpt<span class="pl-pds">"</span></span>).<span class="pl-c1">shortflag</span>(<span class="pl-s"><span class="pl-pds">"</span>n<span class="pl-pds">"</span></span>).<span class="pl-c1">defaultValue</span>(<span class="pl-c1">3.14</span>).<span class="pl-c1">required</span>(<span class="pl-c1">false</span>).<span class="pl-c1">description</span>(<span class="pl-s"><span class="pl-pds">"</span>A number value<span class="pl-pds">"</span></span>);
-   conf.<span class="pl-c1">option</span>(<span class="pl-s"><span class="pl-pds">"</span>boolOpt<span class="pl-pds">"</span></span>).<span class="pl-c1">shortflag</span>(<span class="pl-s"><span class="pl-pds">"</span>b<span class="pl-pds">"</span></span>).<span class="pl-c1">defaultValue</span>(<span class="pl-c1">false</span>).<span class="pl-c1">required</span>(<span class="pl-c1">true</span>).<span class="pl-c1">description</span>(<span class="pl-s"><span class="pl-pds">"</span>A boolean value<span class="pl-pds">"</span></span>);
-   conf.<span class="pl-c1">option</span>(<span class="pl-s"><span class="pl-pds">"</span>strOpt<span class="pl-pds">"</span></span>).<span class="pl-c1">shortflag</span>(<span class="pl-s"><span class="pl-pds">"</span>s<span class="pl-pds">"</span></span>).<span class="pl-c1">defaultValue</span>(<span class="pl-s"><span class="pl-pds">"</span>string<span class="pl-pds">"</span></span>).<span class="pl-c1">required</span>(<span class="pl-c1">true</span>).<span class="pl-c1">description</span>(<span class="pl-s"><span class="pl-pds">"</span>A string value<span class="pl-pds">"</span></span>);
+    <span class="pl-c">/* Setup config options */</span>
+    <span class="pl-c">/* Option properties, e.g. shortened flag, default values... */</span>
+    conf.<span class="pl-c1">option</span>(<span class="pl-s"><span class="pl-pds">"</span>numOpt<span class="pl-pds">"</span></span>).<span class="pl-c1">shortflag</span>(<span class="pl-s"><span class="pl-pds">"</span>n<span class="pl-pds">"</span></span>).<span class="pl-c1">defaultValue</span>(<span class="pl-c1">3.14</span>).<span class="pl-c1">required</span>(<span class="pl-c1">false</span>).<span class="pl-c1">description</span>(<span class="pl-s"><span class="pl-pds">"</span>A number value<span class="pl-pds">"</span></span>);
+    conf.<span class="pl-c1">option</span>(<span class="pl-s"><span class="pl-pds">"</span>boolOpt<span class="pl-pds">"</span></span>).<span class="pl-c1">shortflag</span>(<span class="pl-s"><span class="pl-pds">"</span>b<span class="pl-pds">"</span></span>).<span class="pl-c1">defaultValue</span>(<span class="pl-c1">false</span>).<span class="pl-c1">required</span>(<span class="pl-c1">true</span>).<span class="pl-c1">description</span>(<span class="pl-s"><span class="pl-pds">"</span>A boolean value<span class="pl-pds">"</span></span>);
+    conf.<span class="pl-c1">option</span>(<span class="pl-s"><span class="pl-pds">"</span>strOpt<span class="pl-pds">"</span></span>).<span class="pl-c1">shortflag</span>(<span class="pl-s"><span class="pl-pds">"</span>s<span class="pl-pds">"</span></span>).<span class="pl-c1">defaultValue</span>(<span class="pl-s"><span class="pl-pds">"</span>string<span class="pl-pds">"</span></span>).<span class="pl-c1">required</span>(<span class="pl-c1">true</span>).<span class="pl-c1">description</span>(<span class="pl-s"><span class="pl-pds">"</span>A string value<span class="pl-pds">"</span></span>);
 
-   <span class="pl-c">// parse </span>
-   conf.<span class="pl-c1">parse</span>(argc, argv);
-
-   <span class="pl-c">// processing the configuration here ...</span>
-
-   <span class="pl-k">return</span> <span class="pl-c1">0</span>;
+    <span class="pl-c">/* parse */</span>
+    <span class="pl-k">bool</span> success = conf.<span class="pl-c1">parse</span>(argc, argv);
+    <span class="pl-k">if</span> (success){
+        <span class="pl-c">/* processing the configuration here ... */</span>
+    } 
+    <span class="pl-k">else</span> 
+    {
+        <span class="pl-c">/* report error here ... */</span>
+    }
+    <span class="pl-k">return</span> <span class="pl-c1">0</span>;
 }</pre></div>
 
 <hr>
@@ -84,9 +87,13 @@
 
 <div class="highlight highlight-source-shell"><pre>$ ./program --numOpt 6.28 --boolOpt <span class="pl-c1">true</span> -s <span class="pl-s"><span class="pl-pds">"</span>another string<span class="pl-pds">"</span></span></pre></div>
 
-<p>Alternatively, a config file can also be used, for example:</p>
+<p>Alternatively, a config file can also be used, both JSON and CSV formats are supported, the file format is determined by the input file's extension, for example:</p>
 
-<div class="highlight highlight-source-shell"><pre>$ ./program --config settings.json -s <span class="pl-s"><span class="pl-pds">"</span>another string<span class="pl-pds">"</span></span></pre></div>
+<div class="highlight highlight-source-shell"><pre>$ ./program --config settings.json -s <span class="pl-s"><span class="pl-pds">"</span>overwritten<span class="pl-pds">"</span></span></pre></div>
+
+<p>or </p>
+
+<div class="highlight highlight-source-shell"><pre>$ ./program --config settings.csv -s <span class="pl-s"><span class="pl-pds">"</span>overwritten<span class="pl-pds">"</span></span></pre></div>
 
 <p>Where the content of config file "settings.json" is:</p>
 
@@ -95,6 +102,13 @@
    <span class="pl-s"><span class="pl-pds">"</span>boolOpt<span class="pl-pds">"</span></span>: <span class="pl-c1">true</span>, 
    <span class="pl-s"><span class="pl-pds">"</span>stringOpt<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>this will be overwritten<span class="pl-pds">"</span></span>
 }</pre></div>
+
+<p>and in settings.csv, the content will be:</p>
+
+<pre><code>numOpt,6.28
+boolOpt,true
+stringOpt,this will be overwritten
+</code></pre>
 
 <p>Note that command-line arguments has a higher priority so the attribute "stringOpt" in the json file will be overwritten by "-s/--stringOpt" in the command-line. </p>
 
@@ -106,13 +120,26 @@
 <li>
 <em>boolOpt</em> = true</li>
 <li>
-<em>stringOpt</em> = "another string"</li>
+<em>stringOpt</em> = "overwritten"</li>
 </ul>
+
+<p>A configuration file can also be loaded programmatically using the C++ Config::config() function, for example:</p>
+
+<div class="highlight highlight-source-c++"><pre><span class="pl-c">// create a Config object</span>
+miniconf::Config conf;
+
+<span class="pl-c">/* ... some parsing here if necessary ... */</span>
+
+<span class="pl-c">// load (and possibly overwrite) the current config with the input json file</span>
+conf.config(<span class="pl-s"><span class="pl-pds">"</span>settings.json<span class="pl-pds">"</span></span>);
+</pre></div>
+
+<p>The miniconf::Config::parse() function returns a boolean which indicates whether the parsing process is performed successfully.</p>
 
 <hr>
 
 <h4>
-<a id="reading-configuration-settings" class="anchor" href="#reading-configuration-settings" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Reading configuration settings</h4>
+<a id="accessing-configuration-settings" class="anchor" href="#accessing-configuration-settings" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Accessing configuration settings</h4>
 
 <p>Configuration values can be read by specifying their type <em>implicitly</em>, if output data type can be determined, for example:</p>
 
@@ -128,8 +155,51 @@ std::string s = conf[<span class="pl-s"><span class="pl-pds">"</span>strOpt<span
 
 <hr>
 
+<h2>
+<a id="advanced-features" class="anchor" href="#advanced-features" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Advanced Features</h2>
+
 <h4>
-<a id="modifying-configuration-settings" class="anchor" href="#modifying-configuration-settings" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Modifying configuration settings</h4>
+<a id="nested-configuration" class="anchor" href="#nested-configuration" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Nested configuration</h4>
+
+<p>Nested configuration is support in miniconf with JSON, for example:</p>
+
+<div class="highlight highlight-source-c++"><pre>   <span class="pl-c">// Setup config options </span>
+   <span class="pl-c">// Option properties, e.g. short flag</span>
+   conf.option(<span class="pl-s"><span class="pl-pds">"</span>a.b.c<span class="pl-pds">"</span></span>).shortflag(<span class="pl-s"><span class="pl-pds">"</span>c<span class="pl-pds">"</span></span>).defaultValue(<span class="pl-s"><span class="pl-pds">"</span>c_val<span class="pl-pds">"</span></span>).required(<span class="pl-c1">false</span>).description(<span class="pl-s"><span class="pl-pds">"</span>A nested value<span class="pl-pds">"</span></span>);
+   conf.option(<span class="pl-s"><span class="pl-pds">"</span>a.b.d<span class="pl-pds">"</span></span>).shortflag(<span class="pl-s"><span class="pl-pds">"</span>d<span class="pl-pds">"</span></span>).defaultValue(<span class="pl-s"><span class="pl-pds">"</span>d_val<span class="pl-pds">"</span></span>).required(<span class="pl-c1">false</span>).description(<span class="pl-s"><span class="pl-pds">"</span>A nested value<span class="pl-pds">"</span></span>);
+   conf.option(<span class="pl-s"><span class="pl-pds">"</span>a.e<span class="pl-pds">"</span></span>).shortflag(<span class="pl-s"><span class="pl-pds">"</span>e<span class="pl-pds">"</span></span>).defaultValue(<span class="pl-s"><span class="pl-pds">"</span>e_val<span class="pl-pds">"</span></span>).required(<span class="pl-c1">false</span>).description(<span class="pl-s"><span class="pl-pds">"</span>A nested value<span class="pl-pds">"</span></span>);</pre></div>
+
+<p>With the command line arguments which overrides the original default values:</p>
+
+<div class="highlight highlight-source-shell"><pre>./program --a.b.c overwritten_c_val</pre></div>
+
+<p>the parsed configuration is:</p>
+
+<ul>
+<li>
+<em>a.b.c</em> = "overwritten_c_val"</li>
+<li>
+<em>a.b.d</em> = "d"</li>
+<li>
+<em>a.e</em> = "e"</li>
+</ul>
+
+<p>and the exported JSON file it will become:</p>
+
+<div class="highlight highlight-source-json"><pre>{
+    <span class="pl-s"><span class="pl-pds">"</span>a<span class="pl-pds">"</span></span>: {
+        <span class="pl-s"><span class="pl-pds">"</span>b<span class="pl-pds">"</span></span> : {
+            <span class="pl-s"><span class="pl-pds">"</span>c<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>overwritten_c_val<span class="pl-pds">"</span></span>,
+            <span class="pl-s"><span class="pl-pds">"</span>d<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>d<span class="pl-pds">"</span></span> 
+        },
+        <span class="pl-s"><span class="pl-pds">"</span>e<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>e<span class="pl-pds">"</span></span>
+    }
+}</pre></div>
+
+<hr>
+
+<h4>
+<a id="modifying-configuration-settings" class="anchor" href="#modifying-configuration-settings" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Modifying Configuration Settings</h4>
 
 <p>Configuration values can also be modified during runtime:</p>
 
@@ -139,12 +209,37 @@ conf[<span class="pl-s"><span class="pl-pds">"</span>boolOpt<span class="pl-pds"
 
 <p>Or one can also do explicitly</p>
 
-<div class="highlight highlight-source-c++"><pre>conf[<span class="pl-s"><span class="pl-pds">"</span>numOpt<span class="pl-pds">"</span></span>] = thyu::Value(<span class="pl-c1">12.56</span>);</pre></div>
+<div class="highlight highlight-source-c++"><pre>conf[<span class="pl-s"><span class="pl-pds">"</span>numOpt<span class="pl-pds">"</span></span>] = mimiconf::Value(<span class="pl-c1">12.56</span>);</pre></div>
 
 <hr>
 
 <h4>
-<a id="generated-help--usage-message" class="anchor" href="#generated-help--usage-message" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Generated help / usage message</h4>
+<a id="print-current-configuration-summary" class="anchor" href="#print-current-configuration-summary" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Print current configuration summary</h4>
+
+<p>User may print the current configuration settings using the Config::print() function:</p>
+
+<div class="highlight highlight-source-c++"><pre>conf.print(); <span class="pl-c">// print current settings</span></pre></div>
+
+<p>The output will be (The default output file is stdout):</p>
+
+<div class="highlight highlight-source-shell"><pre>[[[  CONFIGURATION  ]]]
+
+<span class="pl-k">|</span>-------------------------<span class="pl-k">|</span>------------<span class="pl-k">|</span>--------------------------------------------------<span class="pl-k">|</span>
+<span class="pl-k">|</span>           NAME          <span class="pl-k">|</span>    TYPE    <span class="pl-k">|</span>                     VALUE                        <span class="pl-k">|</span>
+<span class="pl-k">|</span>-------------------------<span class="pl-k">|</span>------------<span class="pl-k">|</span>--------------------------------------------------<span class="pl-k">|</span>
+<span class="pl-k">|</span> boolOpt                 <span class="pl-k">|</span> BOOLEAN    <span class="pl-k">|</span> <span class="pl-c1">false</span>                                            <span class="pl-k">|</span>
+<span class="pl-k">|</span> intOpt                  <span class="pl-k">|</span> INT        <span class="pl-k">|</span> 122                                              <span class="pl-k">|</span>
+<span class="pl-k">|</span> numOpt                  <span class="pl-k">|</span> NUMBER     <span class="pl-k">|</span> 3.140000                                         <span class="pl-k">|</span>
+<span class="pl-k">|</span> strOpt                  <span class="pl-k">|</span> STRING     <span class="pl-k">|</span> <span class="pl-s"><span class="pl-pds">"</span>string<span class="pl-pds">"</span></span>                                         <span class="pl-k">|</span>
+<span class="pl-k">|</span>-------------------------<span class="pl-k">|</span>------------<span class="pl-k">|</span>--------------------------------------------------<span class="pl-k">|</span>
+</pre></div>
+
+<hr>
+
+<h4>
+<a id="automated-help--usage-message-generation" class="anchor" href="#automated-help--usage-message-generation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Automated Help / Usage Message Generation</h4>
+
+<p>The function Config::help() generates and displays a help message, which looks like the message below:</p>
 
 <pre><code>[[[  USAGE  ]]]
 
@@ -169,24 +264,99 @@ conf[<span class="pl-s"><span class="pl-pds">"</span>boolOpt<span class="pl-pds"
         A string value  ( DEFAULT = "string" ) 
 </code></pre>
 
+<p>The upper "usage" section can be displayed indepdently using the Config::usage() function. </p>
+
+<p>The "auto-help" feature is enabled in miniconf by default, which means that an extra hidden option "--help/-h" is added to the configuration by default. The help message will be displayed to stdout when "--help/-h" is true. One can change the auto-help features by <em>Config::enableHelp()</em>.</p>
+
 <hr>
 
 <h4>
 <a id="serialization--programmatic-config-file-loading" class="anchor" href="#serialization--programmatic-config-file-loading" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Serialization / programmatic config file loading</h4>
 
+<p>miniconf supports serialization to JSON / CSV formats:</p>
+
+<div class="highlight highlight-source-c++"><pre><span class="pl-c">// serialize current settings</span>
+conf.serialize(<span class="pl-s"><span class="pl-pds">"</span>output_settings.json<span class="pl-pds">"</span></span>, Config::ExportFormat::JSON);
+</pre></div>
+
+<p>Two file formats, <em>Config::ExportFormat::JSON</em> and <em>Config::ExportFormat::CSV</em> are supported. The exported config files can be loaded back by using the "--config" argument, or the "Config::config()" function.</p>
+
 <h4>
-<a id="print-current-configuration-summary" class="anchor" href="#print-current-configuration-summary" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Print current configuration summary</h4>
+<a id="vanilla-version-json-less-version" class="anchor" href="#vanilla-version-json-less-version" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Vanilla version: JSON-less version</h4>
+
+<p>mimiconf requires a json parser to support JSON export and import, currently we are using picojson <a href="https://github.com/kazuho/picojson">GITHUB</a> as the backend JSON parser. </p>
+
+<p>If one wants to remove the JSON dependency (to reduce code size, to remove the BSD license, etc.), one might need to uncomment the line </p>
+
+<div class="highlight highlight-source-c++"><pre>#<span class="pl-k">define</span> <span class="pl-en">MINICONF_JSON_SUPPORT</span></pre></div>
+
+<p>in miniconf.h</p>
 
 <h4>
 <a id="extra-configuration-values" class="anchor" href="#extra-configuration-values" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Extra configuration values</h4>
 
+<p>Unrecognized option flags are treated as "extra configuration values", they will not be neglected and are processed according to how the setting is given to the miniconfig parser:</p>
+
+<p>If it is given as a command line argument, or CSV file, it will be parsed as a string value, for example:</p>
+
+<div class="highlight highlight-source-shell"><pre>./program --extra 123</pre></div>
+
+<p>The option value of flag "extra" will be a string of "123".</p>
+
+<p>Alternatively if it is given as a JSON file, it will try to parse the default data type interpreted by the JSON file:</p>
+
+<div class="highlight highlight-source-json"><pre>{
+    <span class="pl-s"><span class="pl-pds">"</span>extra1<span class="pl-pds">"</span></span> : <span class="pl-c1">123</span>,
+    <span class="pl-s"><span class="pl-pds">"</span>extra2<span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>extra string<span class="pl-pds">"</span></span>
+}</pre></div>
+
+<p>The option value of flag "extra1" will be a number of value 123.0, and the option value of flag "extra2" will be a string of "extra string".</p>
+
+<p><em>Note:</em></p>
+
+<ul>
+<li>Shortened flags are not supported and will be ignored.</li>
+<li>Values without any flag are not supported and will be ignored.</li>
+</ul>
+
 <h4>
 <a id="validation-and-logging" class="anchor" href="#validation-and-logging" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>validation and logging</h4>
 
-<h3>
-<a id="author" class="anchor" href="#author" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Author</h3>
+<p>By default, the configuration settings and the option values given by the user will be automatically checked and validated in the  miniconf::Config::parse() function. Before parsing the argument, user can set the logging level of config checker using the miniconf::Config::log() function. </p>
 
-<p>Tsz-Ho Yu (<a href="mailto:thyu413@gmail.com">thyu413@gmail.com</a>)</p>
+<p>For example, if the user wants to log all the messages:</p>
+
+<div class="highlight highlight-source-c++"><pre>conf.log(miniconf::Config::LogLevel::INFO);</pre></div>
+
+<p>On the other hand, if the user wants to log fatel errors only:</p>
+
+<div class="highlight highlight-source-c++"><pre>conf.log(miniconf::Config::LogLevel::ERROR);</pre></div>
+
+<p>The with the return value of parse() function, user might want to write a simple error checker like this:</p>
+
+<div class="highlight highlight-source-c++"><pre><span class="pl-c">/* set log level to "warning" which logs non-fatal warning as well */</span>
+conf.log(miniconf::Config::LogLevel::WARNING); 
+<span class="pl-c">/* parse the arguments, if error, print log and quit */</span>
+<span class="pl-k">if</span> (conf.parse(argc, argv)){
+    <span class="pl-c">// perform normal tasks...</span>
+} <span class="pl-k">else</span> {
+    <span class="pl-c">/* display erorr log */</span>
+    conf.<span class="pl-c1">log</span>();
+    <span class="pl-c1">exit</span>(<span class="pl-c1">1</span>);
+}</pre></div>
+
+<hr>
+
+<h2>
+<a id="about-miniconf" class="anchor" href="#about-miniconf" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>About miniconf</h2>
+
+<p>miniconf is licensed under the unlicense license. :)</p>
+
+<p>Please also visit the project's website: <a href="http://thyu.github.io/miniconf/">http://thyu.github.io/miniconf/</a></p>
+
+<p>Author: Tsz-Ho Yu (<a href="mailto:thyu413@gmail.com">thyu413@gmail.com</a>)</p>
+
+<p>Website: <a href="http://www.tszho.net/">http://www.tszho.net/</a></p>
       </section>
       <footer>
         <p>This project is maintained by <a href="https://github.com/thyu">thyu</a></p>
