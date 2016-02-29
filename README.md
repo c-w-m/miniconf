@@ -321,4 +321,8 @@ if (conf.parse(argc, argv)){
 ## About miniconf
 miniconf is licensed under the unlicense license. :)
 
+Please also visit the project's website: http://thyu.github.io/miniconf/
+
 Author: Tsz-Ho Yu (thyu413@gmail.com)
+
+Website: http://www.tszho.net/
