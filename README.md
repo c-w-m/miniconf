@@ -2,15 +2,13 @@
 
 miniconf is a minimalist C++ configuration manager.
 
-miniconf only contains one C++ header file. It reads, stores and serializes application settings of a C++ program. 
-
-It is not meant to be fast, but it is designed to make C++ programs simpler and more flexible for prototyping, research, and development in general.
+miniconf only contains one C++ header file. It is not meant to be fast, but it is designed to make C++ programs simpler and more flexible for prototyping, research, and development in general.
 
 #### main features
 
-* It is a smart argument parser: format checking, input validation, default values, etc.
-* It is a configuration file reader (supports JSON and CSV)
-* It serializes settings (in JSON or CSV)
+* *It is a smart argument parser*: format checking, input validation, default values, etc.
+* *It is also a config file reader*: It supports reading from JSON and CSV.
+* It can serialize settings to JSON or CSV files and reuses them later.
 * It generates help and usage message automatically
 
 ## One Minute Quick Start
