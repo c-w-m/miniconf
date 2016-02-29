@@ -1,28 +1,27 @@
 #include <cstdio>
 #include <miniconf.h>
 
-/* Main file
- */
+/* Main file */
 int main(int argc, char** argv)
 {
-   // create a Config object
-   miniconf::Config conf;
+    // create a Config object
+    miniconf::Config conf;
 
-   // Setup config options 
-   // Option properties, e.g. short flag
-   conf.option("numOpt").shortflag("n").defaultValue(3.14).required(false).description("A number value");
-   conf.option("intOpt").shortflag("d").defaultValue(122).required(false).description("A integer value");
-   conf.option("boolOpt").shortflag("b").defaultValue(false).required(true).description("A boolean value");
-   conf.option("strOpt").shortflag("s").defaultValue("string").required(true).description("A string value");
+    // Set up program description
+    conf.description("A simple example for miniconf");
 
-   // parse 
-   conf.parse(argc, argv);
+    // Setup config options 
+    // Option properties, e.g. short flag
+    conf.option("numOpt").shortflag("n").defaultValue(3.14).required(false).description("A number value");
+    conf.option("intOpt").shortflag("d").defaultValue(122).required(false).description("A integer value");
+    conf.option("boolOpt").shortflag("b").defaultValue(false).required(true).description("A boolean value");
+    conf.option("strOpt").shortflag("s").defaultValue("string").required(true).description("A string value");
 
-   // you may print the values out...
-   conf.print();
+    // parse 
+    conf.parse(argc, argv);
 
-   // processing the configuration here ...
-   
+    // you may print the values out...
+    conf.print();
 
-   return 0;
+    return 0;
 }

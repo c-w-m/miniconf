@@ -20,24 +20,27 @@
  *     Code clean up
  * Version 1.4
  *     Support nested JSON
+ * Version 1.5
+ *     JSON-less version
  *
  */
 
-// TODO: Switch to JSON backend?
-// TODO: Nested json
-// TODO: Error checking for nested json
-// TODO: Stray arguments
-// TODO: Support choice (value must be chosen form a list)
-// TODO: Beautiful print instead of printf()
-// TODO: Support array
+#ifndef __MINICONF_H__
+#define __MINICONF_H__
 
-#include <cstring>
+/* Comment the line below to disable JSON support */
+// #define MINICONF_JSON_SUPPORT
+
 #include <string>
+#include <cstring>
 #include <sstream>
 #include <fstream>
 #include <map>
 #include <vector>
+
+#ifdef MINICONF_JSON_SUPPORT
 #include "picojson.h"
+#endif
 
 namespace miniconf
 {
@@ -225,10 +228,16 @@ namespace miniconf
              * User can either serialize the current configuration, or 
              * write one config file manually using external editors.
              */
+#ifdef MINICONF_JSON_SUPPORT
             enum class ExportFormat {
                 JSON,
                 CSV
             };
+#else
+            enum class ExportFormat {
+                CSV
+            };
+#endif
 
             /* Option member class which describe the properties of a configuration option.
              * 
@@ -319,7 +328,11 @@ namespace miniconf
              *
              * Currently JSON and CSV are supported.
              */
+#ifdef MINICONF_JSON_SUPPORT
             std::string serialize(const std::string& serializeFilePath = "", ExportFormat format = ExportFormat::JSON, bool pretty = true);
+#else
+            std::string serialize(const std::string& serializeFilePath = "", ExportFormat format = ExportFormat::CSV, bool pretty = true);
+#endif
 
             // Enables automatically generated help message (--help/-h)
             void enableHelp(bool enabled = true);
@@ -363,11 +376,12 @@ namespace miniconf
             Option* getOption(const char* token, Config::TokenType tokenType);
 
             // determine is a flag is defined in the config
-            bool findOption(const std::string& flag);
+           bool findOption(const std::string& flag);
 
             // parse a token into Value
             Value parseValue(const char* token, Value::DataType dataType);
 
+#ifdef MINICONF_JSON_SUPPORT
             // load json config string
             bool loadJSON(const std::string& JSONStr);
 
@@ -376,6 +390,7 @@ namespace miniconf
 
             // load a value from json
             bool getJSONValue(const picojson::value *v, const std::string& flag); 
+#endif
 
             // load csv config string
             bool loadCSV(const std::string& CSVStr);
@@ -1369,13 +1384,20 @@ namespace miniconf
         if (lastDot != std::string::npos) {
             extension = serializeFilePath.substr(lastDot + 1);
         }
+#ifdef MINICONF_JSON_SUPPORT
         if (extension == "json" || extension == "JSON"){
             format = ExportFormat::JSON; 
         } else if (extension == "csv" || extension == "CSV"){
             format = ExportFormat::CSV; 
-        }    
+        } else {
+            format = ExportFormat::CSV; 
+        }
+#else
+        format = ExportFormat::CSV; 
+#endif
 
         // serialize JSON
+#ifdef MINICONF_JSON_SUPPORT
         if (format == ExportFormat::JSON) {
             picojson::value outObj = picojson::value(picojson::object());
             for (auto v: _optionValues){
@@ -1425,6 +1447,7 @@ namespace miniconf
             }
             outStr = outObj.serialize(true);
         }
+#endif
 
         // serialize CSV
         if (format == ExportFormat::CSV) {
@@ -1441,6 +1464,8 @@ namespace miniconf
             }
             outStr = ss.str();
         }
+
+        // write out file
         if (!serializeFilePath.empty()) {
             std::ofstream ofd(serializeFilePath);
             if (ofd.good()) {
@@ -1469,6 +1494,7 @@ namespace miniconf
 
         // load config according to extension
         // default is json
+#ifdef MINICONF_JSON_SUPPORT
         if (extension == "json" || extension == "JSON") {
             loadJSON(configContent);
             return;
@@ -1478,6 +1504,10 @@ namespace miniconf
         } else {
             loadJSON(configContent);
         }
+#else
+        loadCSV(configContent);
+#endif
+
         return;
     }
 
@@ -1516,6 +1546,7 @@ namespace miniconf
         return success;
     }
  
+#ifdef MINICONF_JSON_SUPPORT
     bool Config::getJSONValue(const picojson::value *v, const std::string& flag){
         bool success = true;
         if (findOption(flag)){
@@ -1577,5 +1608,14 @@ namespace miniconf
         picojson::parse(json, JSONStr);
         return parseJSON(&json, "");
     }
+#endif
 
 }
+
+// TODO: Stray arguments
+// TODO: Support choice (value must be chosen form a list)
+// TODO: Beautiful print, in help() and usage(), instead of printf()
+// TODO: Support array
+// TODO: Switch to JSON backend?
+
+#endif // __MINICONF_H__
