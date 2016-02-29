@@ -2,7 +2,6 @@
 
 miniconf is a minimalist C++ configuration manager
 
-
 This is a simple manager to read, store and serialize application
 settings of a C++ program. It is not meant to be fast, but it is 
 designed to make C++ programs simpler and more flexible for 
@@ -15,8 +14,6 @@ Its main features are:
 * Support JSON and CSV serialization
 * Format checking, user input validation, default values, etc.
 * Generate help and usage message automatically
-
-------------------------------------------------------------------------
 
 ## One Minute Quick Start
 
