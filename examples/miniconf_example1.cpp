@@ -1,3 +1,9 @@
+/* 
+ * miniconf example 1
+ *
+ * author: Tsz-Ho Yu (tszhoyu@gmail.com)
+ */
+
 #include <cstdio>
 #include <miniconf.h>
 

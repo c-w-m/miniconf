@@ -1,26 +1,24 @@
-
 # miniconf
 
-A minimalist C++ configuration manager
+miniconf is a minimalist C++ configuration manager
 
-## Features
 
-   This is a simple manager to read, store and serialize application
-   settings of a C++ program. It is not meant to be fast, but it is 
-   designed to make C++ programs simpler and more flexible for 
-   prototyping, research, and development in general.
-   
-   Its main features are:
+This is a simple manager to read, store and serialize application
+settings of a C++ program. It is not meant to be fast, but it is 
+designed to make C++ programs simpler and more flexible for 
+prototyping, research, and development in general.
 
-    * Define simple application settings easily
-    * Parse settings from command line arguments
-    * Support JSON and CSV serialization
-    * Format checking, user input validation, default values, etc.
-    * Generate help and usage message automatically
+Its main features are:
+
+* Define simple application settings easily
+* Parse settings from command line arguments
+* Support JSON and CSV serialization
+* Format checking, user input validation, default values, etc.
+* Generate help and usage message automatically
 
 ------------------------------------------------------------------------
 
-## miniconf --- A quick start
+## One Minute Quick Start
 
 #### An Example
 
@@ -115,6 +113,27 @@ The miniconf::Config::parse() function returns a boolean which indicates whether
 
 ------------------------------------------------------------------------
 
+#### Accessing configuration settings
+
+Configuration values can be read by specifying their type _implicitly_, if output data type can be determined, for example:
+
+```c++
+double n = conf["numOpt"];
+bool b = conf["boolOpt"];
+std::string s = conf["strOpt"];
+```
+
+or, user may also define the configuration value _explicitly_:
+
+```c++
+double n = conf["numOpt"].getNumber();
+bool b = conf["boolOpt"].getBoolean();
+std::string s = conf["strOpt"].getString();
+```
+------------------------------------------------------------------------
+
+## Advanced Features
+
 #### Nested configuration
 
 Nested configuration is support in miniconf with JSON, for example:
@@ -151,26 +170,6 @@ and the exported JSON file it will become:
         "e" : "e"
     }
 }
-```
-
-------------------------------------------------------------------------
-
-#### Accessing configuration settings
-
-Configuration values can be read by specifying their type _implicitly_, if output data type can be determined, for example:
-
-```c++
-double n = conf["numOpt"];
-bool b = conf["boolOpt"];
-std::string s = conf["strOpt"];
-```
-
-or, user may also define the configuration value _explicitly_:
-
-```c++
-double n = conf["numOpt"].getNumber();
-bool b = conf["boolOpt"].getBoolean();
-std::string s = conf["strOpt"].getString();
 ```
 
 ------------------------------------------------------------------------
@@ -324,8 +323,7 @@ if (conf.parse(argc, argv)){
 ```
 
 ------------------------------------------------------------------------
-
+## About miniconf
 miniconf is licensed under the unlicense license. :)
 
-Tsz-Ho Yu (thyu413@gmail.com)
-
+Author: Tsz-Ho Yu (thyu413@gmail.com)

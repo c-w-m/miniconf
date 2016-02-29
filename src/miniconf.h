@@ -29,7 +29,7 @@
 #define __MINICONF_H__
 
 /* Comment the line below to disable JSON support */
-// #define MINICONF_JSON_SUPPORT
+#define MINICONF_JSON_SUPPORT
 
 #include <string>
 #include <cstring>
